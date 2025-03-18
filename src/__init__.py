@@ -111,7 +111,7 @@ def serve(
 ):
     """Run the API server."""
     uvicorn.run(
-        "thetalkingdrone.app:create_app",
+        "src:create_app",
         host=host,
         port=port,
         reload=reload,

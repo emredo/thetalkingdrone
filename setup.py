@@ -16,7 +16,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "talking-drone=thetalkingdrone.cli:main",
+            "talking-drone=src:main",
         ],
     },
 ) 

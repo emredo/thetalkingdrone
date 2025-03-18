@@ -9,4 +9,4 @@ services:
       - ./src:/app/src
     environment:
       - DEBUG=true
-    command: ["talking-drone", "serve", "--reload"] 
+    command: ["python", "run.py"] 

@@ -10,7 +10,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Install the package in development mode
-RUN pip install -e .
+# The -e flag installs the package in "editable" mode
+# Add verbose output to see installation details
+RUN pip install -e . --verbose
 
 # Expose the port the app runs on
 EXPOSE 8000
