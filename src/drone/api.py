@@ -1,14 +1,15 @@
-from typing import Dict, List, Any, Optional
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Any, Dict, List, Optional
 
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from src.environment.exceptions import ObstacleCollisionException, OutOfBoundsException
 from src.environment.models import Location
 from src.environment.service import EnvironmentService
-from src.environment.exceptions import OutOfBoundsException, ObstacleCollisionException
 
+from .exceptions import DroneException
 from .models import DroneModel
 from .service import DroneService
-from .exceptions import DroneException
-
 
 router = APIRouter(prefix="/drone", tags=["drone"])
 
@@ -17,6 +18,27 @@ router = APIRouter(prefix="/drone", tags=["drone"])
 # In a real application, you'd use a proper database
 _drone_instances: Dict[str, DroneService] = {}
 _environment: Optional[EnvironmentService] = None
+
+
+# Response model for drone details
+class DroneDetails(BaseModel):
+    id: str
+    name: str
+    state: str
+    fuel_type: str
+    fuel_level: float
+    fuel_capacity: float
+    fuel_percentage: float
+    location: Dict[str, float]
+    speed: float
+    heading: float
+    max_speed: float
+    max_altitude: float
+    weight: float
+    dimensions: List[float]
+    max_payload: float
+    current_payload: float
+    telemetry: Dict[str, Any]
 
 
 def get_environment() -> EnvironmentService:
@@ -57,6 +79,37 @@ def get_telemetry(
     """Get current telemetry for the specified drone."""
     drone_service.update()  # Update drone state before returning telemetry
     return drone_service.get_telemetry()
+
+
+@router.get("/{drone_id}/details", response_model=DroneDetails)
+def get_drone_details(
+    drone_service: DroneService = Depends(get_drone_service),
+) -> DroneDetails:
+    """Get detailed information about a specific drone."""
+    drone_service.update()  # Update drone state
+
+    drone = drone_service.drone
+    telemetry = drone_service.get_telemetry()
+
+    return DroneDetails(
+        id=drone.drone_id,
+        name=drone.model.name,
+        state=drone.state.value,
+        fuel_type=drone.model.fuel_type.value,
+        fuel_level=drone.fuel_level,
+        fuel_capacity=drone.model.fuel_capacity,
+        fuel_percentage=telemetry["fuel_percentage"],
+        location={"x": drone.location.x, "y": drone.location.y, "z": drone.location.z},
+        speed=drone.speed,
+        heading=drone.heading,
+        max_speed=drone.model.max_speed,
+        max_altitude=drone.model.max_altitude,
+        weight=drone.model.weight,
+        dimensions=list(drone.model.dimensions),
+        max_payload=drone.model.max_payload,
+        current_payload=drone.payload,
+        telemetry=drone.telemetry,
+    )
 
 
 @router.post("/{drone_id}/takeoff")
