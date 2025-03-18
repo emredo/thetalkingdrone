@@ -4,16 +4,13 @@
 # Ensure pip-tools is installed
 pip install pip-tools
 
-# Update requirements files from .in files
+# Update requirements file from .in file
 echo "Updating requirements.txt from requirements.in..."
 pip-compile requirements.in
 
-echo "Updating requirements-dev.txt from requirements-dev.in..."
-pip-compile requirements-dev.in
-
 # Install dependencies
 echo "Installing all dependencies..."
-pip-sync requirements.txt requirements-dev.txt
+pip install -r requirements.txt
 
 # Install the package in development mode
 echo "Installing package in development mode..."

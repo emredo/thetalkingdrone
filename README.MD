@@ -10,8 +10,8 @@ This tech will revolutionize the UAV industry.
 conda create --name=<yourEnvName> python=3.13.2
 conda activate <yourEnvName>
 
-# Install development dependencies
-pip install -r requirements-dev.txt
+# Install dependencies
+pip install -r requirements.txt
 ```
 
 ### Managing Dependencies
@@ -25,11 +25,17 @@ pip install pip-tools
 # Generate requirements.txt from requirements.in
 pip-compile requirements.in
 
-# Generate requirements-dev.txt from requirements-dev.in
-pip-compile requirements-dev.in
+# Install dependencies
+pip install -r requirements.txt
 
-# Install all dependencies
-pip-sync requirements.txt requirements-dev.txt
+# Install package in development mode
+pip install -e .
+```
+
+You can also use the provided setup script:
+
+```bash
+./setup_dev.sh
 ```
 
 ### Running the Application
