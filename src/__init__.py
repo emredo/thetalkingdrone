@@ -4,11 +4,14 @@ import typer
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from src.config.settings import settings
 from src.drone.api import router as drone_router
 from src.drone.models import DroneModel, FuelType
 from src.drone.service import DroneService
+from src.environment.api import router as environment_router
+from src.environment.api import set_environment_instance
 from src.environment.models import Location, Obstacle
 from src.environment.service import EnvironmentService
 from src.utils.simulation_monitor import get_simulation_monitor
@@ -50,17 +53,41 @@ def create_app() -> FastAPI:
         )
     )
 
+    # Add a sample wind condition
+    from src.environment.models import WindCondition
+
+    environment.set_wind_condition(
+        (3, 5), WindCondition(direction=(1.0, 0.5, 0.0), speed=8.0)
+    )
+    environment.set_wind_condition(
+        (7, 2), WindCondition(direction=(-0.5, 1.0, 0.0), speed=5.0)
+    )
+
     # Start the simulation monitor to log simulation time every 10 seconds
     simulation_monitor = get_simulation_monitor(environment)
     simulation_monitor.start()
 
+    # Set the environment instance for the API
+    set_environment_instance(environment)
+
     # Include router for drone endpoints
     app.include_router(drone_router, prefix=settings.api_prefix)
+
+    # Include router for environment endpoints
+    app.include_router(environment_router, prefix=settings.api_prefix)
+
+    # Mount static files
+    app.mount("/viz", StaticFiles(directory="static", html=True), name="viz")
 
     # Add root endpoint
     @app.get("/")
     def read_root():
-        return {"app_name": settings.app_name, "version": "0.1.0", "api_docs": "/docs"}
+        return {
+            "app_name": settings.app_name,
+            "version": "0.1.0",
+            "api_docs": "/docs",
+            "visualization": "/viz",
+        }
 
     # Add simulation restart endpoint
     @app.post("/restart-simulation")

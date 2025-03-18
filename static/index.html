@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Drone Environment Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #canvas {
+            border: 1px solid #999;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #simTime {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Drone Environment Visualization</h1>
+
+    <div class="controls">
+        <button onclick="fetchData()">Refresh</button>
+        <button onclick="restartSimulation()">Restart Simulation</button>
+        <button onclick="createDefaultDrone()">Add Default Drone</button>
+        <span id="simTime">Simulation Time: 0.00s</span>
+    </div>
+
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <div class="legend">
+        <h3>Legend:</h3>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: gray;"></div>
+            <span>Obstacle</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: green;"></div>
+            <span>Drone (IDLE)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: blue;"></div>
+            <span>Drone (FLYING)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: purple;"></div>
+            <span>Drone (TAKING_OFF)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: orange;"></div>
+            <span>Drone (LANDING)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: red;"></div>
+            <span>Drone (EMERGENCY)</span>
+        </div>
+        <div class="legend-item">
+            <div style="color: blue; font-weight: bold;">→</div>
+            <span>Wind Direction</span>
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let environmentData = null;
+
+        // Scale factors
+        let scaleX, scaleY;
+
+        // Configure API URLs
+        const API_BASE = '/api/v1';
+        const ENV_STATE_URL = `${API_BASE}/environment/state`;
+        const RESTART_URL = '/restart-simulation';
+        const CREATE_DRONE_URL = '/create-default-drone';
+
+        // Fetch environment data
+        async function fetchData() {
+            try {
+                const response = await fetch(ENV_STATE_URL);
+                if (!response.ok) throw new Error('Failed to fetch environment data');
+
+                environmentData = await response.json();
+
+                // Set scale factors based on environment boundaries
+                const bounds = environmentData.environment.boundaries;
+                scaleX = canvas.width / bounds[0];
+                scaleY = canvas.height / bounds[1];
+
+                renderEnvironment();
+
+                // Update simulation time display
+                document.getElementById('simTime').textContent =
+                    `Simulation Time: ${environmentData.environment.time.toFixed(2)}s`;
+            } catch (error) {
+                console.error('Error fetching environment data:', error);
+            }
+        }
+
+        // Restart the simulation
+        async function restartSimulation() {
+            try {
+                const response = await fetch(RESTART_URL, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to restart simulation');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error restarting simulation:', error);
+            }
+        }
+
+        // Create a default drone
+        async function createDefaultDrone() {
+            try {
+                const response = await fetch(CREATE_DRONE_URL, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to create drone');
+
+                const droneId = await response.json();
+                console.log(`Created drone with ID: ${droneId}`);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error creating drone:', error);
+            }
+        }
+
+        // Render the environment
+        function renderEnvironment() {
+            if (!environmentData) return;
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw boundaries
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid (every 10 units)
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+
+            const bounds = environmentData.environment.boundaries;
+            for (let x = 0; x <= bounds[0]; x += 10) {
+                ctx.beginPath();
+                ctx.moveTo(x * scaleX, 0);
+                ctx.lineTo(x * scaleX, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= bounds[1]; y += 10) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * scaleY);
+                ctx.lineTo(canvas.width, y * scaleY);
+                ctx.stroke();
+            }
+
+            // Draw obstacles
+            environmentData.environment.obstacles.forEach(obstacle => {
+                ctx.fillStyle = 'gray';
+                const x = obstacle.position.x * scaleX - (obstacle.dimensions[0] * scaleX / 2);
+                const y = obstacle.position.y * scaleY - (obstacle.dimensions[1] * scaleY / 2);
+                const width = obstacle.dimensions[0] * scaleX;
+                const height = obstacle.dimensions[1] * scaleY;
+
+                ctx.fillRect(x, y, width, height);
+
+                // Label the obstacle
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                const textWidth = ctx.measureText(obstacle.name).width;
+                ctx.fillText(obstacle.name, x + width / 2 - textWidth / 2, y + height / 2);
+            });
+
+            // Draw wind indicators
+            environmentData.environment.wind_conditions.forEach(wind => {
+                const gridX = wind.grid_position.x * 10 * scaleX + 5 * scaleX;
+                const gridY = wind.grid_position.y * 10 * scaleY + 5 * scaleY;
+
+                const windLength = Math.min(wind.speed * 5, 20); // Scale wind vector
+
+                ctx.strokeStyle = 'blue';
+                ctx.lineWidth = 2;
+
+                // Draw wind vector
+                ctx.beginPath();
+                ctx.moveTo(gridX, gridY);
+                ctx.lineTo(
+                    gridX + wind.direction[0] * windLength * scaleX,
+                    gridY + wind.direction[1] * windLength * scaleY
+                );
+                ctx.stroke();
+
+                // Draw arrowhead
+                const angle = Math.atan2(
+                    wind.direction[1],
+                    wind.direction[0]
+                );
+
+                const tipX = gridX + wind.direction[0] * windLength * scaleX;
+                const tipY = gridY + wind.direction[1] * windLength * scaleY;
+
+                ctx.beginPath();
+                ctx.moveTo(tipX, tipY);
+                ctx.lineTo(
+                    tipX - 10 * Math.cos(angle - Math.PI / 6),
+                    tipY - 10 * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.lineTo(
+                    tipX - 10 * Math.cos(angle + Math.PI / 6),
+                    tipY - 10 * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.closePath();
+                ctx.fillStyle = 'blue';
+                ctx.fill();
+            });
+
+            // Draw drones
+            environmentData.drones.forEach(drone => {
+                // Different colors for different drone states
+                switch (drone.state) {
+                    case 'IDLE': ctx.fillStyle = 'green'; break;
+                    case 'FLYING': ctx.fillStyle = 'blue'; break;
+                    case 'TAKING_OFF': ctx.fillStyle = 'purple'; break;
+                    case 'LANDING': ctx.fillStyle = 'orange'; break;
+                    case 'EMERGENCY': ctx.fillStyle = 'red'; break;
+                    default: ctx.fillStyle = 'black';
+                }
+
+                const x = drone.position.x * scaleX;
+                const y = drone.position.y * scaleY;
+
+                // Draw the drone
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw outline
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Label with drone ID and altitude
+                ctx.fillStyle = 'black';
+                ctx.font = '10px Arial';
+                const idText = drone.id.substring(0, 6);
+                const altText = `Alt: ${drone.position.z.toFixed(1)}m`;
+                const fuelText = `Fuel: ${drone.fuel_level.toFixed(1)}`;
+
+                ctx.fillText(idText, x + 12, y - 5);
+                ctx.fillText(altText, x + 12, y + 7);
+                ctx.fillText(fuelText, x + 12, y + 19);
+            });
+        }
+
+        // Initial data fetch
+        fetchData();
+
+        // Auto-refresh every 1 second
+        setInterval(fetchData, 1000);
+    </script>
+</body>
+
+</html>
