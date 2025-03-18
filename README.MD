@@ -7,3 +7,14 @@ this tech will revolutionize the uav industry.
 ```conda activate <yourEnvName>```
 
 ```python -m pip install -r requirements.txt```
+
+
+# Linting
+
+We are using `ruff`as a linter.
+
+```sh
+ruff check
+ruff check --fix
+ruff format
+```

@@ -1,9 +1,7 @@
-from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field
+from typing import Dict, Any
 
 from src.drone.service import DroneService
-from src.environment.service import EnvironmentService
-from .exceptions import AgentNotInitializedException, InvalidCommandException
+from .exceptions import AgentNotInitializedException
 
 
 class AutopilotAgent:
