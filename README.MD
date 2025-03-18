@@ -20,16 +20,13 @@ We use pip-tools to manage dependencies:
 
 ```bash
 # Install pip-tools
-pip install pip-tools
+python -m pip install pip-tools
 
 # Generate requirements.txt from requirements.in
 pip-compile requirements.in
 
 # Install dependencies
-pip install -r requirements.txt
-
-# Install package in development mode
-pip install -e .
+python -m pip install -r requirements.txt
 ```
 
 You can also use the provided setup script:

@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Dict, Any
 from pydantic import BaseModel, Field, validator
 
-from src.environment.models import Location
+from environment.models import Location
 
 
 class DroneState(str, Enum):

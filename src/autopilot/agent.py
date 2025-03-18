@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from src.drone.service import DroneService
+from drone.service import DroneService
 from .exceptions import AgentNotInitializedException
 
 

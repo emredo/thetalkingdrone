@@ -1,9 +1,9 @@
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends
 
-from src.environment.models import Location
-from src.environment.service import EnvironmentService
-from src.environment.exceptions import OutOfBoundsException, ObstacleCollisionException
+from environment.models import Location
+from environment.service import EnvironmentService
+from environment.exceptions import OutOfBoundsException, ObstacleCollisionException
 
 from .models import DroneModel
 from .service import DroneService

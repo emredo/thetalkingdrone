@@ -3,9 +3,9 @@ import time
 import uuid
 from typing import Optional, Dict, Any
 
-from src.environment.models import Location
-from src.environment.service import EnvironmentService
-from src.environment.exceptions import OutOfBoundsException, ObstacleCollisionException
+from environment.models import Location
+from environment.service import EnvironmentService
+from environment.exceptions import OutOfBoundsException, ObstacleCollisionException
 
 from .models import DroneData, DroneModel, DroneState
 from .exceptions import DroneException, InsufficientFuelException, DroneNotOperationalException, InvalidDroneCommandException
