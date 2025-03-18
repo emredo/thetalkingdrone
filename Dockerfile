@@ -6,13 +6,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# No need to copy application code here since we're using volume mounting
+# The development environment will use the mounted code
 
-# Install the package in development mode
-# The -e flag installs the package in "editable" mode
-# Add verbose output to see installation details
-RUN pip install -e . --verbose
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-# Expose the port the app runs on
+# Expose the ports the app runs on
 EXPOSE 8000
+EXPOSE 5678

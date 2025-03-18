@@ -1,12 +1,21 @@
 version: '3'
 
 services:
-  api:
-    build: .
+  drone-environment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      [
+        "sh",
+        "-c",
+        "pip install debugpy && python -m debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn src:create_app --reload --factory --host 0.0.0.0 --port 8000",
+      ]
+    volumes:
+      - .:/app
     ports:
       - "8000:8000"
-    volumes:
-      - ./src:/app/src
+      - "5678:5678"
     environment:
       - DEBUG=true
-    command: ["python", "run.py"] 
+      - PYTHONPATH=/app 

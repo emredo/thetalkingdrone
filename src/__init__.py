@@ -7,12 +7,12 @@ import typer
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from config.settings import settings
-from environment.service import EnvironmentService
-from environment.models import Location, Obstacle
-from drone.models import DroneModel, FuelType
-from drone.service import DroneService
-from drone.api import router as drone_router
+from src.config.settings import settings
+from src.environment.service import EnvironmentService
+from src.environment.models import Location, Obstacle
+from src.drone.models import DroneModel, FuelType
+from src.drone.service import DroneService
+from src.drone.api import router as drone_router
 
 
 def create_app() -> FastAPI:
@@ -86,7 +86,7 @@ def create_app() -> FastAPI:
             )
 
             # Register drone in the API's in-memory store
-            from drone.api import _drone_instances
+            from src.drone.api import _drone_instances
 
             drone_id = drone_service.drone.drone_id
             _drone_instances[drone_id] = drone_service
@@ -96,8 +96,7 @@ def create_app() -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    return app 
-
+    return app
 
 
 app = typer.Typer()
@@ -121,4 +120,4 @@ def serve(
 
 def main():
     """Run the CLI application."""
-    app() 
+    app()

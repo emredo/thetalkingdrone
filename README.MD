@@ -61,7 +61,7 @@ docker run -p 8000:8000 thetalkingdrone
 Or using Docker Compose for development:
 
 ```bash
-docker-compose up
+docker-compose up -d
 ```
 
 ## Linting
