@@ -1,0 +1,6 @@
+# Development dependencies
+# -e .  # Commented out until package structure is fixed
+ruff
+pytest
+black
+pip-tools 

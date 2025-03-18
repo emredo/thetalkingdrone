@@ -1,3 +1,7 @@
+# Git
+.git
+.gitignore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -20,12 +24,10 @@ wheels/
 .installed.cfg
 *.egg
 
-# Environment
+# Virtual environment
 venv/
 env/
 ENV/
-.env
-.venv
 
 # IDE
 .idea/
@@ -34,7 +36,4 @@ ENV/
 *.swo
 
 # Ruff
-.ruff_cache/
-
-# mypy
-.mypy_cache/
+.ruff_cache/ 
