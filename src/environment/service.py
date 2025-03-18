@@ -1,8 +1,11 @@
+import threading
+import time
 from typing import Tuple
 
-from .models import Location, Obstacle, EnvironmentState, WindCondition
-from .exceptions import ObstacleCollisionException, OutOfBoundsException
 from src.utils.logger import logger
+
+from .exceptions import ObstacleCollisionException, OutOfBoundsException
+from .models import EnvironmentState, Location, Obstacle, WindCondition
 
 
 class EnvironmentService:
@@ -12,6 +15,15 @@ class EnvironmentService:
         """Initialize environment with boundaries."""
         logger.info("Initializing environment service")
         self.state = EnvironmentState(boundaries=boundaries)
+        self._last_update_time = time.time()
+
+        # Threading setup
+        self._stop_event = threading.Event()
+        self._time_thread = None
+        self._is_running = False
+
+        # Start the simulation thread
+        self.start_simulation()
 
     def add_obstacle(self, obstacle: Obstacle) -> None:
         """Add an obstacle to the environment."""
@@ -76,3 +88,66 @@ class EnvironmentService:
     def update_time(self, time_delta: float) -> None:
         """Update the environment simulation time."""
         self.state.time += time_delta
+
+    def update_simulation_time(self) -> None:
+        """Update the simulation time based on real elapsed time."""
+        current_time = time.time()
+        elapsed_time = current_time - self._last_update_time
+        self._last_update_time = current_time
+
+        # Update simulation time
+        self.update_time(elapsed_time)
+
+    def start_simulation(self) -> None:
+        """Start the simulation thread."""
+        if self._is_running:
+            logger.warning("Environment simulation thread is already running")
+            return
+
+        self._stop_event.clear()
+        self._time_thread = threading.Thread(target=self._simulation_loop, daemon=True)
+        self._time_thread.start()
+        self._is_running = True
+        logger.info("Environment simulation thread started")
+
+    def stop_simulation(self) -> None:
+        """Stop the simulation thread."""
+        if not self._is_running:
+            logger.warning("Environment simulation thread is not running")
+            return
+
+        self._stop_event.set()
+        if self._time_thread:
+            self._time_thread.join(timeout=2.0)
+        self._is_running = False
+        logger.info("Environment simulation thread stopped")
+
+    def _simulation_loop(self) -> None:
+        """Internal simulation loop that runs in a separate thread."""
+        while not self._stop_event.is_set():
+            # Update simulation time
+            self.update_simulation_time()
+
+            # Small sleep to prevent CPU overuse
+            # Using wait with timeout allows for responsive shutdown
+            self._stop_event.wait(0.1)  # Update time every 100ms
+
+    def reset(self) -> None:
+        """Reset the environment simulation to initial state."""
+        logger.info("Resetting environment simulation")
+
+        # Stop the current simulation thread
+        self.stop_simulation()
+
+        # Reset simulation time
+        self.state.time = 0.0
+        self._last_update_time = time.time()
+
+        # Reset environment state (keeping the same boundaries)
+        boundaries = self.state.boundaries
+        self.state = EnvironmentState(boundaries=boundaries)
+
+        # Restart the simulation thread
+        self.start_simulation()
+
+        logger.info("Environment simulation reset completed")

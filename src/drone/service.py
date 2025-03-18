@@ -1,20 +1,20 @@
 import math
 import time
 import uuid
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
+from src.environment.exceptions import ObstacleCollisionException, OutOfBoundsException
 from src.environment.models import Location
 from src.environment.service import EnvironmentService
-from src.environment.exceptions import OutOfBoundsException, ObstacleCollisionException
+from src.utils.logger import logger
 
-from .models import DroneData, DroneModel, DroneState
 from .exceptions import (
     DroneException,
-    InsufficientFuelException,
     DroneNotOperationalException,
+    InsufficientFuelException,
     InvalidDroneCommandException,
 )
-from src.utils.logger import logger
+from .models import DroneData, DroneModel, DroneState
 
 
 class DroneService:

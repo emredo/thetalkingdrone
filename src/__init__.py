@@ -1,18 +1,17 @@
 """The FastAPI application for the Talking Drone."""
 
-import uvicorn
 import typer
-
-
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.settings import settings
-from src.environment.service import EnvironmentService
-from src.environment.models import Location, Obstacle
+from src.drone.api import router as drone_router
 from src.drone.models import DroneModel, FuelType
 from src.drone.service import DroneService
-from src.drone.api import router as drone_router
+from src.environment.models import Location, Obstacle
+from src.environment.service import EnvironmentService
+from src.utils.simulation_monitor import get_simulation_monitor
 
 
 def create_app() -> FastAPI:
@@ -51,6 +50,10 @@ def create_app() -> FastAPI:
         )
     )
 
+    # Start the simulation monitor to log simulation time every 10 seconds
+    simulation_monitor = get_simulation_monitor(environment)
+    simulation_monitor.start()
+
     # Include router for drone endpoints
     app.include_router(drone_router, prefix=settings.api_prefix)
 
@@ -58,6 +61,28 @@ def create_app() -> FastAPI:
     @app.get("/")
     def read_root():
         return {"app_name": settings.app_name, "version": "0.1.0", "api_docs": "/docs"}
+
+    # Add simulation restart endpoint
+    @app.post("/restart-simulation")
+    def restart_simulation():
+        """Restart the entire simulation from zero."""
+        try:
+            # Reset the environment
+            environment.reset()
+
+            # Clear all drone instances
+            from src.drone.api import _drone_instances
+
+            _drone_instances.clear()
+
+            return {
+                "status": "success",
+                "message": "Simulation restarted. Environment reset and all drones removed.",
+            }
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to restart simulation: {str(e)}"
+            )
 
     # Add example endpoint to create a default drone
     @app.post("/create-default-drone", response_model=str)
