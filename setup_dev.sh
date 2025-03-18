@@ -10,10 +10,6 @@ pip-compile requirements.in
 
 # Install dependencies
 echo "Installing all dependencies..."
-pip install -r requirements.txt
-
-# Install the package in development mode
-echo "Installing package in development mode..."
-pip install -e .
+python -m pip install -r requirements.txt
 
 echo "Development environment ready!" 

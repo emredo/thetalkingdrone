@@ -5,7 +5,6 @@ Logger configuration for the Talking Drone application.
 import logging
 import os
 import sys
-from logging.handlers import RotatingFileHandler
 
 
 def setup_logger():
@@ -31,20 +30,6 @@ def setup_logger():
         console_handler.setLevel(logging.INFO)
 
     logger.addHandler(console_handler)
-
-    # Create file handler for errors and higher
-    logs_dir = os.path.join(os.getcwd(), "logs")
-    os.makedirs(logs_dir, exist_ok=True)
-
-    file_handler = RotatingFileHandler(
-        os.path.join(logs_dir, "drone.log"),
-        maxBytes=10 * 1024 * 1024,  # 10 MB
-        backupCount=5,
-    )
-    file_handler.setLevel(logging.ERROR)
-    file_handler.setFormatter(formatter)
-
-    logger.addHandler(file_handler)
 
     return logger
 
