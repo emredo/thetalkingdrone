@@ -1,4 +1,5 @@
 import math
+import threading
 import time
 import uuid
 from typing import Any, Dict, Optional
@@ -26,6 +27,14 @@ class DroneService:
         self.drone = drone_data
         self.environment = environment
         self._last_update_time = time.time()
+
+        # Threading setup
+        self._stop_event = threading.Event()
+        self._drone_thread = None
+        self._is_running = False
+
+        # Start the drone thread
+        self.start_drone_thread()
 
     @classmethod
     def create_drone(
@@ -61,14 +70,65 @@ class DroneService:
         elapsed_time = current_time - self._last_update_time
         self._last_update_time = current_time
 
-        # If flying, consume fuel
-        if self.drone.state == DroneState.FLYING:
-            fuel_consumed = (elapsed_time / 60) * self.drone.model.fuel_consumption_rate
+        # Consume fuel when drone is not idle
+        if self.drone.state != DroneState.IDLE:
+            # Calculate fuel consumption based on state
+            fuel_consumption_factor = 1.0  # Default factor
+
+            if self.drone.state == DroneState.FLYING:
+                # Higher consumption when flying based on current speed
+                speed_factor = self.drone.speed / self.drone.model.max_speed
+                fuel_consumption_factor = 1.0 + (
+                    speed_factor * 0.5
+                )  # Up to 50% more consumption at max speed
+            elif self.drone.state == DroneState.TAKING_OFF:
+                fuel_consumption_factor = 1.2  # 20% more consumption during takeoff
+            elif self.drone.state == DroneState.LANDING:
+                fuel_consumption_factor = 1.1  # 10% more consumption during landing
+
+            fuel_consumed = (
+                (elapsed_time / 60)
+                * self.drone.model.fuel_consumption_rate
+                * fuel_consumption_factor
+            )
             self.drone.fuel_level = max(0, self.drone.fuel_level - fuel_consumed)
 
             # If out of fuel, emergency mode
             if self.drone.fuel_level <= 0:
                 self.drone.state = DroneState.EMERGENCY
+
+    def start_drone_thread(self) -> None:
+        """Start the drone update thread."""
+        if self._is_running:
+            logger.warning(f"Drone {self.drone.drone_id} thread is already running")
+            return
+
+        self._stop_event.clear()
+        self._drone_thread = threading.Thread(target=self._drone_loop, daemon=True)
+        self._drone_thread.start()
+        self._is_running = True
+        logger.info(f"Drone {self.drone.drone_id} thread started")
+
+    def stop_drone_thread(self) -> None:
+        """Stop the drone update thread."""
+        if not self._is_running:
+            logger.warning(f"Drone {self.drone.drone_id} thread is not running")
+            return
+
+        self._stop_event.set()
+        if self._drone_thread:
+            self._drone_thread.join(timeout=2.0)
+        self._is_running = False
+        logger.info(f"Drone {self.drone.drone_id} thread stopped")
+
+    def _drone_loop(self) -> None:
+        """Internal drone loop that runs in a separate thread."""
+        while not self._stop_event.is_set():
+            # Update drone state
+            self.update()
+
+            # Small sleep to prevent CPU overuse
+            self._stop_event.wait(0.1)  # Update every 100ms
 
     def take_off(self, target_altitude: float) -> None:
         """Command drone to take off to specified altitude."""
@@ -147,9 +207,14 @@ class DroneService:
             + (target_location.z - self.drone.location.z) ** 2
         )
 
-        # Calculate fuel required (simplified)
-        # Assume straight-line movement at a constant speed
-        estimated_time_minutes = distance / self.drone.model.max_speed / 60
+        # Calculate time to reach destination based on max speed
+        travel_time = distance / self.drone.model.max_speed  # Time in seconds
+
+        # Set current drone speed to max speed
+        self.drone.speed = self.drone.model.max_speed
+
+        # Calculate fuel required
+        estimated_time_minutes = travel_time / 60
         fuel_required = estimated_time_minutes * self.drone.model.fuel_consumption_rate
 
         if self.drone.fuel_level < fuel_required:
@@ -157,9 +222,11 @@ class DroneService:
                 f"Insufficient fuel for move: required {fuel_required}, available {self.drone.fuel_level}"
             )
 
-        # Update location and consume fuel (simplified)
+        # Update location
         self.drone.location = target_location
-        self.drone.fuel_level -= fuel_required
+
+        # Reset speed after reaching destination
+        self.drone.speed = 0.0
 
     def get_telemetry(self) -> Dict[str, Any]:
         """Get current drone telemetry data."""
@@ -186,3 +253,7 @@ class DroneService:
         telemetry.update(self.drone.telemetry)
 
         return telemetry
+
+    def __del__(self):
+        """Destructor to ensure thread is properly cleaned up."""
+        self.stop_drone_thread()
