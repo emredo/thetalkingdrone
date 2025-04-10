@@ -499,11 +499,28 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
+            // Draw boundary coordinates
+            const bounds = environmentData.environment.boundaries;
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+
+            // Top-left corner
+            ctx.fillText('(0, 0)', 30, 20);
+
+            // Top-right corner
+            ctx.fillText(`(${bounds[0]}, 0)`, canvas.width - 30, 20);
+
+            // Bottom-left corner
+            ctx.fillText(`(0, ${bounds[1]})`, 30, canvas.height - 10);
+
+            // Bottom-right corner
+            ctx.fillText(`(${bounds[0]}, ${bounds[1]})`, canvas.width - 30, canvas.height - 10);
+
             // Draw grid (every 10 units)
             ctx.strokeStyle = '#eee';
             ctx.lineWidth = 1;
 
-            const bounds = environmentData.environment.boundaries;
             for (let x = 0; x <= bounds[0]; x += 10) {
                 ctx.beginPath();
                 ctx.moveTo(x * scaleX, 0);
