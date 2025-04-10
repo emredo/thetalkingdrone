@@ -1,0 +1,11 @@
+# Core dependencies
+fastapi
+uvicorn
+typer
+pydantic
+
+# Development tools
+ruff
+pytest
+black
+pip-tools 
