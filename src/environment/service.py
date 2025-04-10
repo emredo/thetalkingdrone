@@ -147,6 +147,23 @@ class EnvironmentService:
         boundaries = self.state.boundaries
         self.state = EnvironmentState(boundaries=boundaries)
 
+        # Add some sample obstacles
+        self.add_obstacle(
+            Obstacle(
+                location=Location(x=50.0, y=50.0, z=0.0),
+                dimensions=(10.0, 10.0, 20.0),
+                name="Building 1",
+            )
+        )
+
+        # Add a sample wind condition
+        self.set_wind_condition(
+            (3, 5), WindCondition(direction=(1.0, 0.5, 0.0), speed=8.0)
+        )
+        self.set_wind_condition(
+            (7, 2), WindCondition(direction=(-0.5, 1.0, 0.0), speed=5.0)
+        )
+
         # Restart the simulation thread
         self.start_simulation()
 

@@ -27,10 +27,10 @@ class Settings(BaseModel):
         default="Standard Drone", description="Default drone model name"
     )
     default_drone_max_speed: float = Field(
-        default=10.0, description="Default drone max speed in m/s"
+        default=1.0, description="Default drone max speed in m/s"
     )
     default_drone_max_altitude: float = Field(
-        default=30.0, description="Default drone max altitude in meters"
+        default=100.0, description="Default drone max altitude in meters"
     )
     default_drone_weight: float = Field(
         default=1.5, description="Default drone weight in kg"

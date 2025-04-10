@@ -205,7 +205,9 @@
                 <button onclick="land()">Land</button>
             </div>
             <div style="margin-top: 10px;">
-                <input type="number" id="targetAltitude" placeholder="Altitude" min="0" max="30" style="width: 80px;">
+                <input type="number" id="targetX" placeholder="X" style="width: 60px;">
+                <input type="number" id="targetY" placeholder="Y" style="width: 60px;">
+                <input type="number" id="targetZ" placeholder="Z" style="width: 60px;">
                 <button onclick="moveToPosition()">Move To</button>
             </div>
         </div>
@@ -408,9 +410,9 @@
             if (!selectedDroneId) return;
 
             try {
-                const targetAltitude = parseFloat(document.getElementById('targetAltitude').value) || 10;
+                const targetZ = parseFloat(document.getElementById('targetZ').value) || 10;
 
-                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/takeoff?target_altitude=${targetAltitude}`, {
+                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/takeoff?target_altitude=${targetZ}`, {
                     method: 'POST'
                 });
 
@@ -451,17 +453,15 @@
         async function moveToPosition() {
             if (!selectedDroneId || !droneDetailData) return;
 
-            // For now, let's just move to a new X,Y position at the same altitude
             try {
-                const currentX = droneDetailData.location.x;
-                const currentY = droneDetailData.location.y;
-                const targetZ = parseFloat(document.getElementById('targetAltitude').value) || droneDetailData.location.z;
+                const targetX = parseFloat(document.getElementById('targetX').value);
+                const targetY = parseFloat(document.getElementById('targetY').value);
+                const targetZ = parseFloat(document.getElementById('targetZ').value);
 
-                // Move 10 units in a random direction
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 10;
-                const newX = currentX + Math.cos(angle) * distance;
-                const newY = currentY + Math.sin(angle) * distance;
+                if (isNaN(targetX) || isNaN(targetY) || isNaN(targetZ)) {
+                    alert('Please enter valid coordinates for X, Y, and Z');
+                    return;
+                }
 
                 const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/move`, {
                     method: 'POST',
@@ -469,8 +469,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        x: newX,
-                        y: newY,
+                        x: targetX,
+                        y: targetY,
                         z: targetZ
                     })
                 });
