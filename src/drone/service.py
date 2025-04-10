@@ -210,9 +210,6 @@ class DroneService:
         # Calculate time to reach destination based on max speed
         travel_time = distance / self.drone.model.max_speed  # Time in seconds
 
-        # Set current drone speed to max speed
-        self.drone.speed = self.drone.model.max_speed
-
         # Calculate fuel required
         estimated_time_minutes = travel_time / 60
         fuel_required = estimated_time_minutes * self.drone.model.fuel_consumption_rate
@@ -222,7 +219,44 @@ class DroneService:
                 f"Insufficient fuel for move: required {fuel_required}, available {self.drone.fuel_level}"
             )
 
-        # Update location
+        # Calculate the number of steps based on a reasonable update interval (e.g., 0.1 seconds)
+        update_interval = 0.1  # seconds
+        num_steps = int(travel_time / update_interval)
+
+        if num_steps < 1:
+            num_steps = 1  # Ensure at least one step
+
+        # Calculate step sizes for each coordinate
+        dx = (target_location.x - self.drone.location.x) / num_steps
+        dy = (target_location.y - self.drone.location.y) / num_steps
+        dz = (target_location.z - self.drone.location.z) / num_steps
+
+        # Set current drone speed to max speed
+        self.drone.speed = self.drone.model.max_speed
+
+        # Move the drone step by step
+        for step in range(num_steps):
+            if self.drone.fuel_level <= 0 or self.drone.state != DroneState.FLYING:
+                break
+
+            # Calculate new position
+            new_x = self.drone.location.x + dx
+            new_y = self.drone.location.y + dy
+            new_z = self.drone.location.z + dz
+
+            # Update drone location
+            self.drone.location = Location(x=new_x, y=new_y, z=new_z)
+
+            # Consume fuel for this step
+            step_fuel_consumption = (
+                update_interval / 60
+            ) * self.drone.model.fuel_consumption_rate
+            self.drone.fuel_level -= step_fuel_consumption
+
+            # Sleep for the update interval
+            time.sleep(update_interval)
+
+        # Ensure we reach exactly the target location
         self.drone.location = target_location
 
         # Reset speed after reaching destination
