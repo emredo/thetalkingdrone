@@ -180,13 +180,13 @@ class DroneService:
         self.drone.state = DroneState.LANDING
 
         # Update location (simplified)
-        new_location = Location(x=self.drone.location.x, y=self.drone.location.y, z=0)
+        new_location = Location(x=self.drone.location.x, y=self.drone.location.y, z=0.1)
 
         try:
             self.environment.validate_location(new_location)
             self.drone.location = new_location
             self.drone.state = DroneState.IDLE
-        except (OutOfBoundsException, ObstacleCollisionException) as e:
+        except Exception as e:
             self.drone.state = DroneState.EMERGENCY
             raise DroneException(f"Landing failed: {str(e)}")
 
