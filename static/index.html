@@ -199,6 +199,28 @@
                 <div class="detail-value" id="droneMaxSpeed"></div>
             </div>
 
+            <!-- Add natural language command section -->
+            <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+                <h3>LLM Autopilot</h3>
+                <div class="detail-row" style="margin-bottom: 15px;">
+                    <button id="initAutopilotBtn" onclick="initializeAutopilot()" style="width: 100%;">Initialize
+                        Autopilot</button>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <textarea id="nlCommand"
+                        placeholder="Enter a natural language command (e.g., 'take off to 20 meters')"
+                        style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; resize: vertical;"
+                        rows="3"></textarea>
+                </div>
+                <div>
+                    <button id="sendCommandBtn" onclick="sendNLCommand()"
+                        style="width: 100%; background-color: #007bff;" disabled>Send Command</button>
+                </div>
+                <div id="commandResult"
+                    style="margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; display: none;">
+                </div>
+            </div>
+
             <h3>Actions</h3>
             <div>
                 <button onclick="takeOff()">Take Off</button>
@@ -683,6 +705,111 @@
 
         // Auto-refresh every 1 second
         setInterval(fetchData, 1000);
+
+        // Add these functions to handle the LLM Autopilot
+        let selectedDroneHasAutopilot = false;
+
+        function initializeAutopilot() {
+            if (!selectedDroneId) {
+                alert("Please select a drone first");
+                return;
+            }
+
+            fetch(`/api/autopilot/${selectedDroneId}/initialize`, {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Autopilot initialized:", data);
+                    selectedDroneHasAutopilot = true;
+                    document.getElementById('sendCommandBtn').disabled = false;
+                    document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
+                    document.getElementById('initAutopilotBtn').disabled = true;
+                })
+                .catch(error => {
+                    console.error("Error initializing autopilot:", error);
+                    alert(`Error initializing autopilot: ${error.message}`);
+                });
+        }
+
+        function sendNLCommand() {
+            if (!selectedDroneId || !selectedDroneHasAutopilot) {
+                alert("Please select a drone and initialize its autopilot first");
+                return;
+            }
+
+            const command = document.getElementById('nlCommand').value.trim();
+            if (!command) {
+                alert("Please enter a command");
+                return;
+            }
+
+            // Display loading indicator
+            const resultDiv = document.getElementById('commandResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div style="text-align: center;">Processing command...</div>';
+
+            fetch(`/api/autopilot/${selectedDroneId}/command`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: command })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Command result:", data);
+                    resultDiv.innerHTML = `
+                    <div style="margin-bottom: 5px; font-weight: bold;">Result:</div>
+                    <div style="white-space: pre-wrap; font-family: monospace;">${data.result}</div>
+                `;
+
+                    // Refresh drone data
+                    fetchDroneDetails(selectedDroneId);
+                })
+                .catch(error => {
+                    console.error("Error executing command:", error);
+                    resultDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+                });
+        }
+
+        // Modify selectDrone function to reset autopilot state
+        const originalSelectDrone = selectDrone;
+        selectDrone = function (droneId) {
+            originalSelectDrone(droneId);
+
+            // Reset autopilot state
+            selectedDroneHasAutopilot = false;
+            document.getElementById('sendCommandBtn').disabled = true;
+            document.getElementById('initAutopilotBtn').disabled = false;
+            document.getElementById('initAutopilotBtn').textContent = 'Initialize Autopilot';
+            document.getElementById('commandResult').style.display = 'none';
+
+            // Check if the selected drone already has an autopilot
+            fetch(`/api/autopilot/list`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data[droneId]) {
+                        selectedDroneHasAutopilot = true;
+                        document.getElementById('sendCommandBtn').disabled = false;
+                        document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
+                        document.getElementById('initAutopilotBtn').disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error checking autopilot status:", error);
+                });
+        }
     </script>
 </body>
 

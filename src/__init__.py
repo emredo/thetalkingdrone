@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from src.autopilot.api import router as autopilot_router
 from src.config.settings import settings
 from src.drone.api import router as drone_router
 from src.drone.models import DroneModel, FuelType
@@ -75,6 +76,9 @@ def create_app() -> FastAPI:
 
     # Include router for environment endpoints
     app.include_router(environment_router, prefix=settings.api_prefix)
+
+    # Include router for autopilot endpoints
+    app.include_router(autopilot_router, prefix=settings.api_prefix)
 
     # Mount static files
     app.mount("/viz", StaticFiles(directory="static", html=True), name="viz")
