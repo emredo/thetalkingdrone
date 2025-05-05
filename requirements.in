@@ -9,3 +9,12 @@ ruff
 pytest
 black
 pip-tools 
+
+langchain_core
+langchain_community
+langgraph
+langchain_google_community[drive]
+langchain_openai
+langchain_anthropic
+langchain_deepseek
+langchain_google_genai
