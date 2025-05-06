@@ -367,11 +367,11 @@
 
             // Add appropriate badge class
             switch (droneDetailData.state) {
-                case 'idle': stateElem.classList.add('badge-idle'); break;
-                case 'flying': stateElem.classList.add('badge-flying'); break;
-                case 'taking_off': stateElem.classList.add('badge-takingoff'); break;
-                case 'landing': stateElem.classList.add('badge-landing'); break;
-                case 'emergency': stateElem.classList.add('badge-emergency'); break;
+                case 'IDLE': stateElem.classList.add('badge-idle'); break;
+                case 'FLYING': stateElem.classList.add('badge-flying'); break;
+                case 'TAKING_OFF': stateElem.classList.add('badge-takingoff'); break;
+                case 'LANDING': stateElem.classList.add('badge-landing'); break;
+                case 'EMERGENCY': stateElem.classList.add('badge-emergency'); break;
             }
         }
 
@@ -566,10 +566,13 @@
                 ctx.fillRect(x, y, width, height);
 
                 // Label the obstacle
-                ctx.fillStyle = 'white';
-                ctx.font = '12px Arial';
-                const textWidth = ctx.measureText(obstacle.name).width;
-                ctx.fillText(obstacle.name, x + width / 2 - textWidth / 2, y + height / 2);
+                ctx.fillStyle = 'black';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const centerX = x + width / 2;
+                const centerY = y + height / 2;
+                ctx.fillText(obstacle.name, centerX, centerY);
             });
 
             // Draw wind indicators
@@ -617,16 +620,6 @@
 
             // Draw drones
             environmentData.drones.forEach(drone => {
-                // Different colors for different drone states
-                switch (drone.state) {
-                    case 'IDLE': ctx.fillStyle = 'green'; break;
-                    case 'FLYING': ctx.fillStyle = 'blue'; break;
-                    case 'TAKING_OFF': ctx.fillStyle = 'purple'; break;
-                    case 'LANDING': ctx.fillStyle = 'orange'; break;
-                    case 'EMERGENCY': ctx.fillStyle = 'red'; break;
-                    default: ctx.fillStyle = 'black';
-                }
-
                 const x = drone.position.x * scaleX;
                 const y = drone.position.y * scaleY;
 
@@ -639,6 +632,16 @@
                     ctx.stroke();
                 }
 
+                // Set drone color based on state to match the legend
+                switch (drone.state) {
+                    case 'IDLE': ctx.fillStyle = 'green'; break;
+                    case 'FLYING': ctx.fillStyle = 'blue'; break;
+                    case 'TAKING_OFF': ctx.fillStyle = 'purple'; break;
+                    case 'LANDING': ctx.fillStyle = 'orange'; break;
+                    case 'EMERGENCY': ctx.fillStyle = 'red'; break;
+                    default: ctx.fillStyle = 'black';
+                }
+
                 // Draw the drone
                 ctx.beginPath();
                 ctx.arc(x, y, 8, 0, Math.PI * 2);
@@ -649,16 +652,19 @@
                 ctx.lineWidth = 1;
                 ctx.stroke();
 
-                // Label with drone ID and altitude
+                // Display only altitude with BIG BLACK TEXT
+                const altText = `${drone.position.z.toFixed(1)}m`;
+                ctx.font = 'bold 16px Arial';
                 ctx.fillStyle = 'black';
-                ctx.font = '10px Arial';
-                const idText = drone.id.substring(0, 6);
-                const altText = `Alt: ${drone.position.z.toFixed(1)}m`;
-                const fuelText = `Fuel: ${drone.fuel_level.toFixed(1)}`;
 
-                ctx.fillText(idText, x + 12, y - 5);
-                ctx.fillText(altText, x + 12, y + 7);
-                ctx.fillText(fuelText, x + 12, y + 19);
+                // Add white background to ensure text is visible on any background
+                const textWidth = ctx.measureText(altText).width;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(x + 25, y - 20, textWidth + 6, 24);
+
+                // Draw the altitude text
+                ctx.fillStyle = 'black';
+                ctx.fillText(altText, x + 28, y - 3);
             });
         }
 
