@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from src.environment.exceptions import ObstacleCollisionException, OutOfBoundsException
 from src.environment.models import Location
 from src.environment.service import EnvironmentService
+from src.utils.logger import logger
 
 from .exceptions import DroneException
 from .models import DroneModel
@@ -69,6 +70,7 @@ def register_drone(
         _drone_instances[drone_id] = drone_service
         return drone_id
     except Exception as e:
+        logger.error(f"Failed to register drone: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -124,6 +126,9 @@ def take_off(
             "message": "Taking off to altitude 1 meter",
         }
     except (DroneException, OutOfBoundsException, ObstacleCollisionException) as e:
+        logger.error(
+            f"Takeoff failed for drone {drone_service.drone.drone_id}: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -134,6 +139,9 @@ def land(drone_service: DroneService = Depends(get_drone_service)) -> Dict[str, 
         drone_service.land()
         return {"status": "success", "message": "Landing initiated"}
     except (DroneException, OutOfBoundsException, ObstacleCollisionException) as e:
+        logger.error(
+            f"Landing failed for drone {drone_service.drone.drone_id}: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -149,6 +157,9 @@ def move_to(
             "message": f"Moving to location ({target.x}, {target.y}, {target.z})",
         }
     except (DroneException, OutOfBoundsException, ObstacleCollisionException) as e:
+        logger.error(
+            f"Move operation failed for drone {drone_service.drone.drone_id} to location ({target.x}, {target.y}, {target.z}): {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 

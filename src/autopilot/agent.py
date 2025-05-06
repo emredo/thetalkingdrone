@@ -13,7 +13,7 @@ from .exceptions import AgentNotInitializedException, InvalidCommandException
 
 
 class AutoPilotAgent:
-    """Autopilot agent implementation using Gemini 2.5 Pro with LangGraph."""
+    """AutoPilot agent implementation using Gemini 2.5 Pro with LangGraph."""
 
     def __init__(self, drone_service: DroneService):
         """Initialize the Gemini autopilot agent."""

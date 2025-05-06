@@ -7,6 +7,7 @@ from src.autopilot.agent import AutoPilotAgent
 from src.autopilot.exceptions import AgentNotInitializedException, AutopilotException
 from src.drone.api import get_drone_service
 from src.drone.service import DroneService
+from src.utils.logger import logger
 
 router = APIRouter(prefix="/autopilot", tags=["autopilot"])
 
@@ -54,6 +55,9 @@ def initialize_autopilot(
             "message": f"Autopilot agent initialized for drone {drone_id}",
         }
     except Exception as e:
+        logger.error(
+            f"Failed to initialize autopilot agent for drone {drone_id}: {str(e)}"
+        )
         raise HTTPException(
             status_code=500, detail=f"Failed to initialize autopilot agent: {str(e)}"
         )
@@ -70,13 +74,20 @@ def execute_command(
         result = agent.execute_command(command_input.command)
         return result
     except AgentNotInitializedException:
+        logger.error(f"Autopilot agent for drone {drone_id} not initialized")
         raise HTTPException(
             status_code=400,
             detail="Autopilot agent not initialized. Initialize it first.",
         )
     except AutopilotException as e:
+        logger.error(
+            f"Autopilot error for drone {drone_id}: {str(e)} - Command: {command_input.command}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(
+            f"Unexpected error executing command for drone {drone_id}: {str(e)} - Command: {command_input.command}"
+        )
         raise HTTPException(
             status_code=500, detail=f"Error executing command: {str(e)}"
         )
