@@ -1,9 +1,9 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
-from langgraph.prebuilt import List, create_react_agent
+from langgraph.prebuilt import create_react_agent
 
 from src.config.llm_config import get_llm_object
 from src.drone.service import DroneService
@@ -12,7 +12,7 @@ from src.environment.models import Location
 from .exceptions import AgentNotInitializedException, InvalidCommandException
 
 
-class GeminiAutopilotAgent:
+class AutoPilotAgent:
     """Autopilot agent implementation using Gemini 2.5 Pro with LangGraph."""
 
     def __init__(self, drone_service: DroneService):

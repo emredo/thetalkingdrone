@@ -3,7 +3,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from src.autopilot.agent import GeminiAutopilotAgent
+from src.autopilot.agent import AutoPilotAgent
 from src.autopilot.exceptions import AgentNotInitializedException, AutopilotException
 from src.drone.api import get_drone_service
 from src.drone.service import DroneService
@@ -11,7 +11,7 @@ from src.drone.service import DroneService
 router = APIRouter(prefix="/autopilot", tags=["autopilot"])
 
 # In-memory store for autopilot agents
-_autopilot_agents: Dict[str, GeminiAutopilotAgent] = {}
+_autopilot_agents: Dict[str, AutoPilotAgent] = {}
 
 
 class CommandInput(BaseModel):
@@ -20,7 +20,7 @@ class CommandInput(BaseModel):
     command: str
 
 
-def get_autopilot_agent(drone_id: str) -> GeminiAutopilotAgent:
+def get_autopilot_agent(drone_id: str) -> AutoPilotAgent:
     """Dependency to get autopilot agent for a specific drone."""
     if drone_id not in _autopilot_agents:
         raise HTTPException(
@@ -45,7 +45,7 @@ def initialize_autopilot(
 
     # Create and initialize the agent
     try:
-        agent = GeminiAutopilotAgent(drone_service)
+        agent = AutoPilotAgent(drone_service)
         agent.setup_agent()
         _autopilot_agents[drone_id] = agent
 
@@ -63,7 +63,7 @@ def initialize_autopilot(
 def execute_command(
     command_input: CommandInput,
     drone_id: str,
-    agent: GeminiAutopilotAgent = Depends(get_autopilot_agent),
+    agent: AutoPilotAgent = Depends(get_autopilot_agent),
 ) -> Dict[str, Any]:
     """Execute a natural language command via the autopilot agent."""
     try:

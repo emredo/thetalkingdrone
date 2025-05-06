@@ -58,7 +58,3 @@ Returns a list of all drones with autopilot agents and their initialization stat
 - "Land the drone"
 - "What is the current position and fuel level?"
 - "Take off, move to coordinates (25, 35, 40), hover for a moment, and then land safely"
-
-## Adding Custom Tools
-
-To add custom tools to the autopilot agent, modify the `_create_drone_tools` method in the `GeminiAutopilotAgent` class in `gemini_agent.py`. 
