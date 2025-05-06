@@ -133,19 +133,12 @@ class DroneService:
     def take_off(self) -> None:
         """Command drone to take off to specified altitude."""
         target_altitude = 1
+        vertical_speed = 0.25  # meters per second
+
         # Check if drone can take off
         if self.drone.state not in [DroneState.IDLE]:
             raise DroneNotOperationalException(
                 f"Cannot take off in {self.drone.state} state"
-            )
-
-        # Check if we have enough fuel for takeoff (simplified)
-        min_fuel_required = (
-            self.drone.model.fuel_consumption_rate * 0.1
-        )  # Minimum 6 seconds of flight
-        if self.drone.fuel_level < min_fuel_required:
-            raise InsufficientFuelException(
-                f"Insufficient fuel to take off: {self.drone.fuel_level}"
             )
 
         # Check if target altitude is valid
@@ -154,42 +147,179 @@ class DroneService:
                 f"Invalid target altitude: {target_altitude}. Must be between 0 and {self.drone.model.max_altitude}"
             )
 
+        # Calculate time needed for takeoff
+        altitude_difference = target_altitude - self.drone.location.z
+        takeoff_time = altitude_difference / vertical_speed  # Time in seconds
+
+        # Calculate fuel required for takeoff
+        estimated_time_minutes = takeoff_time / 60
+        fuel_required = (
+            estimated_time_minutes * self.drone.model.fuel_consumption_rate * 1.2
+        )  # 20% more during takeoff
+
+        if self.drone.fuel_level < fuel_required:
+            raise InsufficientFuelException(
+                f"Insufficient fuel to take off: required {fuel_required}, available {self.drone.fuel_level}"
+            )
+
         # Set state to taking off
         self.drone.state = DroneState.TAKING_OFF
 
-        # Update location (simplified, would be gradual in a real implementation)
-        new_location = Location(
-            x=self.drone.location.x, y=self.drone.location.y, z=target_altitude
-        )
+        # Set vertical speed
+        self.drone.speed = vertical_speed
+
+        # Calculate the number of steps based on a reasonable update interval
+        update_interval = 0.1  # seconds
+        num_steps = int(takeoff_time / update_interval)
+
+        if num_steps < 1:
+            num_steps = 1  # Ensure at least one step
+
+        # Calculate step size for altitude
+        dz = altitude_difference / num_steps
 
         try:
-            self.environment.validate_location(new_location)
-            self.drone.location = new_location
+            # Move the drone step by step
+            for step in range(num_steps):
+                if (
+                    self.drone.fuel_level <= 0
+                    or self.drone.state != DroneState.TAKING_OFF
+                ):
+                    break
+
+                # Calculate new position
+                new_z = self.drone.location.z + dz
+
+                # Update drone location
+                new_location = Location(
+                    x=self.drone.location.x, y=self.drone.location.y, z=new_z
+                )
+
+                # Validate the new location
+                self.environment.validate_location(new_location)
+                self.drone.location = new_location
+
+                # Consume fuel for this step
+                step_fuel_consumption = (
+                    (update_interval / 60)
+                    * self.drone.model.fuel_consumption_rate
+                    * 1.2
+                )  # 20% more during takeoff
+                self.drone.fuel_level -= step_fuel_consumption
+
+                # Sleep for the update interval
+                time.sleep(update_interval)
+
+            # Ensure we reach exactly the target altitude
+            final_location = Location(
+                x=self.drone.location.x, y=self.drone.location.y, z=target_altitude
+            )
+            self.environment.validate_location(final_location)
+            self.drone.location = final_location
+
+            # Change state to flying and reset speed
             self.drone.state = DroneState.FLYING
+            self.drone.speed = 0.0
+
         except (OutOfBoundsException, ObstacleCollisionException) as e:
             self.drone.state = DroneState.EMERGENCY
             raise DroneException(f"Take off failed: {str(e)}")
+        except Exception as e:
+            self.drone.state = DroneState.EMERGENCY
+            raise DroneException(f"Take off failed: Unexpected error: {str(e)}")
 
     def land(self) -> None:
         """Command drone to land."""
+        vertical_speed = 0.25  # meters per second
+        target_altitude = 0.1  # Final altitude after landing
+
         if self.drone.state not in [DroneState.FLYING, DroneState.EMERGENCY]:
             raise DroneNotOperationalException(
                 f"Cannot land in {self.drone.state} state"
             )
 
-        # Set state to landing
-        self.drone.state = DroneState.LANDING
+        # Calculate time needed for landing
+        altitude_difference = self.drone.location.z - target_altitude
+        landing_time = altitude_difference / vertical_speed  # Time in seconds
 
-        # Update location (simplified)
-        new_location = Location(x=self.drone.location.x, y=self.drone.location.y, z=0.1)
+        # Calculate fuel required for landing
+        estimated_time_minutes = landing_time / 60
+        fuel_required = (
+            estimated_time_minutes * self.drone.model.fuel_consumption_rate * 1.1
+        )  # 10% more during landing
+
+        if self.drone.fuel_level < fuel_required:
+            # If not enough fuel, enter emergency state but still try to land
+            self.drone.state = DroneState.EMERGENCY
+            logger.warning(
+                f"Insufficient fuel for controlled landing: {self.drone.fuel_level}"
+            )
+        else:
+            # Set state to landing
+            self.drone.state = DroneState.LANDING
+
+        # Set vertical speed (negative for descent)
+        self.drone.speed = vertical_speed
+
+        # Calculate the number of steps based on a reasonable update interval
+        update_interval = 0.1  # seconds
+        num_steps = int(landing_time / update_interval)
+
+        if num_steps < 1:
+            num_steps = 1  # Ensure at least one step
+
+        # Calculate step size for altitude (negative for descent)
+        dz = -altitude_difference / num_steps
 
         try:
-            self.environment.validate_location(new_location)
-            self.drone.location = new_location
+            # Move the drone step by step
+            for step in range(num_steps):
+                if self.drone.state not in [DroneState.LANDING, DroneState.EMERGENCY]:
+                    break
+
+                # Calculate new position
+                new_z = max(target_altitude, self.drone.location.z + dz)
+
+                # Update drone location
+                new_location = Location(
+                    x=self.drone.location.x, y=self.drone.location.y, z=new_z
+                )
+
+                # Validate the new location
+                self.environment.validate_location(new_location)
+                self.drone.location = new_location
+
+                # Consume fuel for this step
+                if self.drone.fuel_level > 0:
+                    step_fuel_consumption = (
+                        (update_interval / 60)
+                        * self.drone.model.fuel_consumption_rate
+                        * 1.1
+                    )  # 10% more during landing
+                    self.drone.fuel_level = max(
+                        0, self.drone.fuel_level - step_fuel_consumption
+                    )
+
+                # Sleep for the update interval
+                time.sleep(update_interval)
+
+            # Ensure we reach exactly the target altitude
+            final_location = Location(
+                x=self.drone.location.x, y=self.drone.location.y, z=target_altitude
+            )
+            self.environment.validate_location(final_location)
+            self.drone.location = final_location
+
+            # Change state to idle and reset speed
             self.drone.state = DroneState.IDLE
-        except Exception as e:
+            self.drone.speed = 0.0
+
+        except (OutOfBoundsException, ObstacleCollisionException) as e:
             self.drone.state = DroneState.EMERGENCY
             raise DroneException(f"Landing failed: {str(e)}")
+        except Exception as e:
+            self.drone.state = DroneState.EMERGENCY
+            raise DroneException(f"Landing failed: Unexpected error: {str(e)}")
 
     def move_to(self, target_location: Location) -> None:
         """Command drone to move to a target location."""
