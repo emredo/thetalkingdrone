@@ -432,9 +432,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const targetZ = parseFloat(document.getElementById('targetZ').value) || 10;
-
-                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/takeoff?target_altitude=${targetZ}`, {
+                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/takeoff`, {
                     method: 'POST'
                 });
 

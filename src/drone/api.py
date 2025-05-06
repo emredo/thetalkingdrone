@@ -114,14 +114,14 @@ def get_drone_details(
 
 @router.post("/{drone_id}/takeoff")
 def take_off(
-    target_altitude: float, drone_service: DroneService = Depends(get_drone_service)
+    drone_service: DroneService = Depends(get_drone_service),
 ) -> Dict[str, str]:
     """Command drone to take off to the specified altitude."""
     try:
-        drone_service.take_off(target_altitude)
+        drone_service.take_off()
         return {
             "status": "success",
-            "message": f"Taking off to altitude {target_altitude}",
+            "message": "Taking off to altitude 1 meter",
         }
     except (DroneException, OutOfBoundsException, ObstacleCollisionException) as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -25,12 +25,6 @@ class GeminiAutopilotAgent:
 
     def setup_agent(self) -> None:
         """Setup the LangGraph agent with Gemini 2.5 Pro and tools for drone control."""
-        # Set up Gemini
-        api_key = os.environ.get(
-            "GOOGLE_API_KEY", "AIzaSyDv5NSYFdNkEA_J9upAaWuOvgDJB3DkNnY"
-        )
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY environment variable is required")
 
         # Initialize the LLM
         self.llm = get_llm_object()
@@ -82,11 +76,11 @@ Use the tools to respond to user queries about the drone or to control the drone
             return self.drone_service.get_telemetry()
 
         @tool("take_off")
-        def take_off(altitude: float) -> str:
+        def take_off() -> str:
             """Command the drone to take off to a specified altitude in meters."""
             try:
-                self.drone_service.take_off(altitude)
-                return f"Drone taking off to altitude {altitude}m"
+                self.drone_service.take_off()
+                return "Drone taking off to 1 meter"
             except Exception as e:
                 return f"Take off failed: {str(e)}"
 

@@ -130,8 +130,9 @@ class DroneService:
             # Small sleep to prevent CPU overuse
             self._stop_event.wait(0.1)  # Update every 100ms
 
-    def take_off(self, target_altitude: float) -> None:
+    def take_off(self) -> None:
         """Command drone to take off to specified altitude."""
+        target_altitude = 1
         # Check if drone can take off
         if self.drone.state not in [DroneState.IDLE]:
             raise DroneNotOperationalException(
