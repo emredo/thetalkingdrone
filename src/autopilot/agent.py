@@ -51,7 +51,7 @@ Guidelines for operation:
 5. When navigating to coordinates, confirm the path is clear of obstacles
 
 When executing commands, think about:
-- The current state of the drone (is it flying, idle, etc.?)
+- The current state of the drone (is it FLYING, TAKING_OFF, LANDING, etc.?)
 - The necessary sequence of operations (take off before moving, etc.)
 - Required parameters (altitude, coordinates)
 - Safety checks at each step

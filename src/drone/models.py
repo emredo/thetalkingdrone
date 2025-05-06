@@ -8,12 +8,12 @@ from src.environment.models import Location
 class DroneState(str, Enum):
     """Enum representing possible drone states."""
 
-    IDLE = "idle"
-    FLYING = "flying"
-    LANDING = "landing"
-    TAKING_OFF = "taking_off"
-    EMERGENCY = "emergency"
-    MAINTENANCE = "maintenance"
+    IDLE = "IDLE"
+    FLYING = "FLYING"
+    LANDING = "LANDING"
+    TAKING_OFF = "TAKING_OFF"
+    EMERGENCY = "EMERGENCY"
+    MAINTENANCE = "MAINTENANCE"
 
 
 class FuelType(str, Enum):
