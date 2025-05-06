@@ -17,11 +17,12 @@ class AutoPilotAgent:
 
     def __init__(self, drone_service: DroneService):
         """Initialize the Gemini autopilot agent."""
-        super().__init__(drone_service)
+        self.drone_service = drone_service
         self.tools = []
         self.llm = None
         self.memory = None
         self.agent = None
+        self.is_initialized = False
 
     def setup_agent(self) -> None:
         """Setup the LangGraph agent with Gemini 2.5 Pro and tools for drone control."""
@@ -77,7 +78,7 @@ Use the tools to respond to user queries about the drone or to control the drone
 
         @tool("take_off")
         def take_off() -> str:
-            """Command the drone to take off to a specified altitude in meters."""
+            """Command the drone to take off."""
             try:
                 self.drone_service.take_off()
                 return "Drone taking off to 1 meter"
