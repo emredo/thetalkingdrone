@@ -7,7 +7,7 @@ from langgraph.prebuilt import create_react_agent
 
 from src.config.llm_config import get_llm_object
 from src.drone.service import DroneService
-from src.environment.models import Location
+from src.environment.models import Location, Obstacle
 
 from .exceptions import AgentNotInitializedException, InvalidCommandException
 
@@ -104,8 +104,19 @@ Use the tools to respond to user queries about the drone or to control the drone
             except Exception as e:
                 return f"Move failed: {str(e)}"
 
+        @tool("get_buildings")
+        def get_buildings() -> List[Obstacle]:
+            """Get the list of buildings in the environment."""
+            try:
+                buildings = []
+                for obstacle in self.drone_service.get_obstacles():
+                    buildings.append(obstacle)
+                return buildings
+            except Exception as e:
+                return f"Failed to get buildings: {str(e)}"
+
         # Return the list of tools
-        return [get_telemetry, take_off, land, move_to]
+        return [get_telemetry, take_off, land, move_to, get_buildings]
 
     def execute_command(self, command: str) -> Dict[str, Any]:
         """Execute a natural language command via the LangGraph agent."""

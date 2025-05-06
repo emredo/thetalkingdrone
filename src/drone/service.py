@@ -2,10 +2,10 @@ import math
 import threading
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from src.environment.exceptions import ObstacleCollisionException, OutOfBoundsException
-from src.environment.models import Location
+from src.environment.models import Location, Obstacle
 from src.environment.service import EnvironmentService
 from src.utils.logger import logger
 
@@ -418,6 +418,10 @@ class DroneService:
         telemetry.update(self.drone.telemetry)
 
         return telemetry
+    
+    def get_obstacles(self) -> List[Obstacle]:
+        """Get the list of obstacles in the environment."""
+        return self.environment.state.obstacles
 
     def __del__(self):
         """Destructor to ensure thread is properly cleaned up."""
