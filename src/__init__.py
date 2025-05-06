@@ -18,7 +18,8 @@ from src.drone.models import DroneModel, FuelType
 from src.drone.service import DroneService
 from src.environment.api import router as environment_router
 from src.environment.api import set_environment_instance
-from src.environment.models import Location, Obstacle
+from src.environment.models import Location
+from src.environment.sample_obstacles import get_sample_obstacles
 from src.environment.service import EnvironmentService
 from src.utils.logger import log_endpoint_error, logger
 from src.utils.simulation_monitor import get_simulation_monitor
@@ -127,13 +128,8 @@ def create_app() -> FastAPI:
     )
 
     # Add some sample obstacles
-    environment.add_obstacle(
-        Obstacle(
-            location=Location(x=50.0, y=50.0, z=0.0),
-            dimensions=(10.0, 10.0, 20.0),
-            name="Building 1",
-        )
-    )
+    for obstacle in get_sample_obstacles():
+        environment.add_obstacle(obstacle)
 
     # Add a sample wind condition
     from src.environment.models import WindCondition

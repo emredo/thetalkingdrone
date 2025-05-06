@@ -2,6 +2,7 @@ import threading
 import time
 from typing import Tuple
 
+from src.environment.sample_obstacles import get_sample_obstacles
 from src.utils.logger import logger
 
 from .exceptions import ObstacleCollisionException, OutOfBoundsException
@@ -147,14 +148,9 @@ class EnvironmentService:
         boundaries = self.state.boundaries
         self.state = EnvironmentState(boundaries=boundaries)
 
-        # Add some sample obstacles
-        self.add_obstacle(
-            Obstacle(
-                location=Location(x=50.0, y=50.0, z=0.0),
-                dimensions=(10.0, 10.0, 20.0),
-                name="Building 1",
-            )
-        )
+        # Add sample obstacles
+        for obstacle in get_sample_obstacles():
+            self.add_obstacle(obstacle)
 
         # Add a sample wind condition
         self.set_wind_condition(
