@@ -3,8 +3,8 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from src.autopilot.agent import GeminiAutopilotAgent
 from src.autopilot.exceptions import AgentNotInitializedException, AutopilotException
-from src.autopilot.gemini_agent import GeminiAutopilotAgent
 from src.drone.api import get_drone_service
 from src.drone.service import DroneService
 

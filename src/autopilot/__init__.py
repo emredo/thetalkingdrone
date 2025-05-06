@@ -1,12 +1,11 @@
 """Autopilot module for drone control using LLMs."""
 
-from .agent import AutopilotAgent
+from .agent import AutopilotAgent, GeminiAutopilotAgent
 from .exceptions import (
     AgentNotInitializedException,
     AutopilotException,
     InvalidCommandException,
 )
-from .gemini_agent import GeminiAutopilotAgent
 
 __all__ = [
     "AutopilotException",
