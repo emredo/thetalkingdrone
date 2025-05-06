@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.prebuilt import create_react_agent
 
 from src.autopilot.agent import AutopilotAgent
@@ -12,6 +11,7 @@ from src.autopilot.exceptions import (
     AgentNotInitializedException,
     InvalidCommandException,
 )
+from src.config.llm_config import get_llm_object
 from src.drone.service import DroneService
 from src.environment.models import Location
 
@@ -37,11 +37,7 @@ class GeminiAutopilotAgent(AutopilotAgent):
             raise ValueError("GOOGLE_API_KEY environment variable is required")
 
         # Initialize the LLM
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-pro-exp-03-25",
-            temperature=0.2,
-            google_api_key=api_key,
-        )
+        self.llm = get_llm_object()
 
         # Create tools from drone service methods
         self.tools = self._create_drone_tools()
