@@ -132,15 +132,11 @@ Use the tools to respond to user queries about the drone or to control the drone
             # Execute the agent with the input state
             response = self.agent.invoke(input_state)
 
-            # Extract the AI's response from the messages
-            ai_message = response.get("messages", [])[-1]
+            return_str = ""
+            for message in response.get("messages", []):
+                if isinstance(message, AIMessage):
+                    return_str += f"\n-----------\n{message.content}"
 
-            return {
-                "status": "success",
-                "result": ai_message.content
-                if isinstance(ai_message, AIMessage)
-                else "Command executed",
-                "raw_result": response,
-            }
+            return {"status": "success", "result": return_str}
         except Exception as e:
             raise InvalidCommandException(f"Failed to execute command: {str(e)}")
