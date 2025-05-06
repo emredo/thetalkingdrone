@@ -715,7 +715,7 @@
                 return;
             }
 
-            fetch(`/api/autopilot/${selectedDroneId}/initialize`, {
+            fetch(`${API_BASE}/autopilot/${selectedDroneId}/initialize`, {
                 method: 'POST'
             })
                 .then(response => {
@@ -754,7 +754,7 @@
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = '<div style="text-align: center;">Processing command...</div>';
 
-            fetch(`/api/autopilot/${selectedDroneId}/command`, {
+            fetch(`${API_BASE}/autopilot/${selectedDroneId}/command`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -796,7 +796,7 @@
             document.getElementById('commandResult').style.display = 'none';
 
             // Check if the selected drone already has an autopilot
-            fetch(`/api/autopilot/list`)
+            fetch(`${API_BASE}/autopilot/list`)
                 .then(response => response.json())
                 .then(data => {
                     if (data[droneId]) {

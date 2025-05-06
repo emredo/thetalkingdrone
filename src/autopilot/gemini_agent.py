@@ -1,11 +1,11 @@
 import os
 from typing import Any, Dict, List
 
-from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.tools.base import BaseTool, StructuredTool
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.prebuilt import create_react_agent
 
 from src.autopilot.agent import AutopilotAgent
 from src.autopilot.exceptions import (
@@ -17,7 +17,7 @@ from src.environment.models import Location
 
 
 class GeminiAutopilotAgent(AutopilotAgent):
-    """Autopilot agent implementation using Gemini 2.5 Pro with LangChain."""
+    """Autopilot agent implementation using Gemini 2.5 Pro with LangGraph."""
 
     def __init__(self, drone_service: DroneService):
         """Initialize the Gemini autopilot agent."""
@@ -25,21 +25,21 @@ class GeminiAutopilotAgent(AutopilotAgent):
         self.tools = []
         self.llm = None
         self.memory = None
-        self.agent_executor = None
+        self.agent = None
 
     def setup_agent(self) -> None:
-        """Setup the LangChain agent with Gemini 2.5 Pro and tools for drone control."""
+        """Setup the LangGraph agent with Gemini 2.5 Pro and tools for drone control."""
         # Set up Gemini
-        api_key = os.environ.get("GOOGLE_API_KEY")
+        api_key = os.environ.get(
+            "GOOGLE_API_KEY", "AIzaSyDv5NSYFdNkEA_J9upAaWuOvgDJB3DkNnY"
+        )
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
 
-
         # Initialize the LLM
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-pro-exp-03-25",
             temperature=0.2,
-            convert_system_message_to_human=True,
             google_api_key=api_key,
         )
 
@@ -51,74 +51,55 @@ class GeminiAutopilotAgent(AutopilotAgent):
             memory_key="chat_history", return_messages=True
         )
 
-        # Create prompt template
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    """You are an intelligent drone autopilot system that helps control a drone using natural language commands.
-            
-You have access to several drone control functions. Your job is to interpret the user's natural language request and 
-execute the appropriate functions to fulfill that request.
+        # Create system message
+        system_message = """You are an advanced drone autopilot assistant powered by Gemini 2.5 Pro.
 
-When given a command, think through what steps need to be taken to satisfy the request, then use the appropriate tools.
-Always prioritize safety - don't perform actions that could put the drone or its surroundings at risk.
+Your purpose is to interpret natural language commands and translate them into precise drone operations. You have direct control over the drone through specialized tools.
 
-Current drone state information is available through the get_telemetry tool.
-            """,
-                ),
-                MessagesPlaceholder(variable_name="chat_history"),
-                ("human", "{input}"),
-                MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
-        )
+Guidelines for operation:
+1. Safety is your highest priority - evaluate commands for potential risks before execution
+2. Check current state before acting - use get_telemetry to understand the drone's current status
+3. Execute commands efficiently - break complex tasks into logical sequences of actions
+4. Provide clear feedback about each action taken and the drone's current status
+5. When navigating to coordinates, confirm the path is clear of obstacles
 
-        # Create the agent
-        agent = create_openai_tools_agent(self.llm, self.tools, prompt)
+When executing commands, think about:
+- The current state of the drone (is it flying, idle, etc.?)
+- The necessary sequence of operations (take off before moving, etc.)
+- Required parameters (altitude, coordinates)
+- Safety checks at each step
 
-        # Create the agent executor
-        self.agent_executor = AgentExecutor(
-            agent=agent,
-            tools=self.tools,
-            memory=self.memory,
-            verbose=True,
-            handle_parsing_errors=True,
-        )
+Use the tools to respond to user queries about the drone or to control the drone.
+"""
 
-        self.is_initialized = True
-
-    def _create_drone_tools(self) -> List[BaseTool]:
-        """Create LangChain tools from drone service methods."""
-        tools = []
-
-        # Tool for getting telemetry
-        tools.append(
-            StructuredTool.from_function(
-                func=self.drone_service.get_telemetry,
-                name="get_telemetry",
-                description="Get current drone telemetry including position, fuel level, speed, and state",
+        # Create the LangGraph agent using ReAct agent
+        try:
+            self.agent = create_react_agent(
+                model=self.llm, tools=self.tools, state_modifier=system_message
             )
-        )
+            self.is_initialized = True
+        except Exception as e:
+            raise InvalidCommandException(f"Failed to create agent: {str(e)}")
 
-        # Tool for takeoff
-        def take_off_tool(altitude: float) -> str:
-            """Command the drone to take off to the specified altitude."""
+    def _create_drone_tools(self) -> List[Any]:
+        """Create tools from drone service methods."""
+
+        @tool("get_telemetry")
+        def get_telemetry() -> Dict[str, Any]:
+            """Get current drone telemetry including position, fuel level, speed, and state."""
+            return self.drone_service.get_telemetry()
+
+        @tool("take_off")
+        def take_off(altitude: float) -> str:
+            """Command the drone to take off to a specified altitude in meters."""
             try:
                 self.drone_service.take_off(altitude)
                 return f"Drone taking off to altitude {altitude}m"
             except Exception as e:
                 return f"Take off failed: {str(e)}"
 
-        tools.append(
-            StructuredTool.from_function(
-                func=take_off_tool,
-                name="take_off",
-                description="Command the drone to take off to a specified altitude in meters",
-            )
-        )
-
-        # Tool for landing
-        def land_tool() -> str:
+        @tool("land")
+        def land() -> str:
             """Command the drone to land."""
             try:
                 self.drone_service.land()
@@ -126,15 +107,9 @@ Current drone state information is available through the get_telemetry tool.
             except Exception as e:
                 return f"Landing failed: {str(e)}"
 
-        tools.append(
-            StructuredTool.from_function(
-                func=land_tool, name="land", description="Command the drone to land"
-            )
-        )
-
-        # Tool for moving to a location
-        def move_to_tool(x: float, y: float, z: float) -> str:
-            """Command the drone to move to the specified location."""
+        @tool("move_to")
+        def move_to(x: float, y: float, z: float) -> str:
+            """Command the drone to move to a specific 3D coordinate (x, y, z)."""
             try:
                 location = Location(x=x, y=y, z=z)
                 self.drone_service.move_to(location)
@@ -142,30 +117,32 @@ Current drone state information is available through the get_telemetry tool.
             except Exception as e:
                 return f"Move failed: {str(e)}"
 
-        tools.append(
-            StructuredTool.from_function(
-                func=move_to_tool,
-                name="move_to",
-                description="Command the drone to move to a specific 3D coordinate (x, y, z)",
-            )
-        )
-
-        return tools
+        # Return the list of tools
+        return [get_telemetry, take_off, land, move_to]
 
     def execute_command(self, command: str) -> Dict[str, Any]:
-        """Execute a natural language command via the LangChain agent."""
+        """Execute a natural language command via the LangGraph agent."""
         if not self.is_initialized:
             raise AgentNotInitializedException(
                 "Agent not initialized. Call setup_agent() first."
             )
 
         try:
-            result = self.agent_executor.invoke({"input": command})
+            # Create a state with the command as a HumanMessage
+            input_state = {"messages": [HumanMessage(content=command)]}
+
+            # Execute the agent with the input state
+            response = self.agent.invoke(input_state)
+
+            # Extract the AI's response from the messages
+            ai_message = response.get("messages", [])[-1]
 
             return {
                 "status": "success",
-                "result": result.get("output", "Command executed"),
-                "raw_result": result,
+                "result": ai_message.content
+                if isinstance(ai_message, AIMessage)
+                else "Command executed",
+                "raw_result": response,
             }
         except Exception as e:
             raise InvalidCommandException(f"Failed to execute command: {str(e)}")

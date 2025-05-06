@@ -103,7 +103,9 @@ def create_app() -> FastAPI:
 
             # Clear all drone instances
             from src.drone.api import _drone_instances
+            from src.autopilot.api import _autopilot_agents
 
+            _autopilot_agents.clear()
             _drone_instances.clear()
 
             return {
