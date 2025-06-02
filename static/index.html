@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Drone Environment Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #canvas {
+            border: 1px solid #999;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #simTime {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            border: 1px solid #333;
+        }
+
+        .layout {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .canvas-container {
+            flex: 1;
+        }
+
+        #droneDetails {
+            flex: 0 0 300px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        #droneDetails h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .detail-label {
+            flex: 0 0 120px;
+            font-weight: bold;
+        }
+
+        .detail-value {
+            flex: 1;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .badge-idle {
+            background-color: green;
+        }
+
+        .badge-flying {
+            background-color: blue;
+        }
+
+        .badge-takingoff {
+            background-color: purple;
+        }
+
+        .badge-landing {
+            background-color: orange;
+        }
+
+        .badge-emergency {
+            background-color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Drone Environment Visualization</h1>
+
+    <div class="controls">
+        <button onclick="fetchData()">Refresh</button>
+        <button onclick="restartSimulation()">Restart Simulation</button>
+        <button onclick="createDefaultDrone()">Add Default Drone</button>
+        <span id="simTime">Simulation Time: 0.00s</span>
+    </div>
+
+    <div class="layout">
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+
+        <div id="droneDetails">
+            <h2>Drone Details <span id="droneState" class="badge badge-idle">IDLE</span></h2>
+            <div class="detail-row">
+                <div class="detail-label">ID:</div>
+                <div class="detail-value" id="droneId"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Name:</div>
+                <div class="detail-value" id="droneName"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Position:</div>
+                <div class="detail-value" id="dronePosition"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Speed:</div>
+                <div class="detail-value" id="droneSpeed"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Heading:</div>
+                <div class="detail-value" id="droneHeading"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Fuel:</div>
+                <div class="detail-value" id="droneFuel"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Weight:</div>
+                <div class="detail-value" id="droneWeight"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Max Altitude:</div>
+                <div class="detail-value" id="droneMaxAltitude"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Dimensions:</div>
+                <div class="detail-value" id="droneDimensions"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Max Speed:</div>
+                <div class="detail-value" id="droneMaxSpeed"></div>
+            </div>
+
+            <!-- Add natural language command section -->
+            <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+                <h3>LLM Autopilot</h3>
+                <div class="detail-row" style="margin-bottom: 15px;">
+                    <button id="initAutopilotBtn" onclick="initializeAutopilot()" style="width: 100%;">Initialize
+                        Autopilot</button>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <textarea id="nlCommand"
+                        placeholder="Enter a natural language command (e.g., 'take off to 20 meters')"
+                        style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; resize: vertical;"
+                        rows="3"></textarea>
+                </div>
+                <div>
+                    <button id="sendCommandBtn" onclick="sendNLCommand()"
+                        style="width: 100%; background-color: #007bff;" disabled>Send Command</button>
+                </div>
+                <div id="commandResult"
+                    style="margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; display: none;">
+                </div>
+            </div>
+
+            <h3>Actions</h3>
+            <div>
+                <button onclick="takeOff()">Take Off</button>
+                <button onclick="land()">Land</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <input type="number" id="targetX" placeholder="X" style="width: 60px;">
+                <input type="number" id="targetY" placeholder="Y" style="width: 60px;">
+                <input type="number" id="targetZ" placeholder="Z" style="width: 60px;">
+                <button onclick="moveToPosition()">Move To</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <h3>Legend:</h3>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: gray;"></div>
+            <span>Obstacle</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: green;"></div>
+            <span>Drone (IDLE)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: blue;"></div>
+            <span>Drone (FLYING)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: purple;"></div>
+            <span>Drone (TAKING_OFF)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: orange;"></div>
+            <span>Drone (LANDING)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: red;"></div>
+            <span>Drone (EMERGENCY)</span>
+        </div>
+        <div class="legend-item">
+            <div style="color: blue; font-weight: bold;">→</div>
+            <span>Wind Direction</span>
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let environmentData = null;
+        let selectedDroneId = null;
+        let droneDetailData = null;
+
+        // Scale factors
+        let scaleX, scaleY;
+
+        // Configure API URLs
+        const API_BASE = '/api/v1';
+        const ENV_STATE_URL = `${API_BASE}/environment/state`;
+        const RESTART_URL = '/restart-simulation';
+        const CREATE_DRONE_URL = '/create-default-drone';
+
+        // Fetch environment data
+        async function fetchData() {
+            try {
+                const response = await fetch(ENV_STATE_URL);
+                if (!response.ok) throw new Error('Failed to fetch environment data');
+
+                environmentData = await response.json();
+
+                // Set scale factors based on environment boundaries
+                const bounds = environmentData.environment.boundaries;
+                scaleX = canvas.width / bounds[0];
+                scaleY = canvas.height / bounds[1];
+
+                renderEnvironment();
+
+                // Update simulation time display
+                document.getElementById('simTime').textContent =
+                    `Simulation Time: ${environmentData.environment.time.toFixed(2)}s`;
+
+                // If a drone is selected, update its details
+                if (selectedDroneId) {
+                    const selectedDrone = environmentData.drones.find(d => d.id === selectedDroneId);
+                    if (selectedDrone) {
+                        fetchDroneDetails(selectedDroneId);
+                    } else {
+                        // Selected drone no longer exists
+                        clearSelectedDrone();
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching environment data:', error);
+            }
+        }
+
+        // Fetch detailed drone information
+        async function fetchDroneDetails(droneId) {
+            try {
+                const response = await fetch(`${API_BASE}/drone/${droneId}/details`);
+                if (!response.ok) throw new Error('Failed to fetch drone details');
+
+                droneDetailData = await response.json();
+                updateDroneDetailsPanel();
+
+                // Show the details panel
+                document.getElementById('droneDetails').style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching drone details:', error);
+                clearSelectedDrone();
+            }
+        }
+
+        // Update the drone details panel with the fetched data
+        function updateDroneDetailsPanel() {
+            if (!droneDetailData) return;
+
+            document.getElementById('droneId').textContent = droneDetailData.id;
+            document.getElementById('droneName').textContent = droneDetailData.name;
+            document.getElementById('dronePosition').textContent =
+                `(${droneDetailData.location.x.toFixed(1)}, ${droneDetailData.location.y.toFixed(1)}, ${droneDetailData.location.z.toFixed(1)})`;
+            document.getElementById('droneSpeed').textContent =
+                `${droneDetailData.speed.toFixed(1)} m/s (max: ${droneDetailData.max_speed.toFixed(1)} m/s)`;
+            document.getElementById('droneHeading').textContent =
+                `${droneDetailData.heading.toFixed(1)}°`;
+            document.getElementById('droneFuel').textContent =
+                `${droneDetailData.fuel_level.toFixed(1)} / ${droneDetailData.fuel_capacity.toFixed(1)} (${droneDetailData.fuel_percentage.toFixed(1)}%)`;
+            document.getElementById('droneWeight').textContent =
+                `${droneDetailData.weight.toFixed(1)} kg`;
+            document.getElementById('droneMaxAltitude').textContent =
+                `${droneDetailData.max_altitude.toFixed(1)} m`;
+            document.getElementById('droneDimensions').textContent =
+                `${droneDetailData.dimensions[0]} × ${droneDetailData.dimensions[1]} × ${droneDetailData.dimensions[2]} m`;
+            document.getElementById('droneMaxSpeed').textContent =
+                `${droneDetailData.max_speed.toFixed(1)} m/s`;
+
+            // Update state badge
+            const stateElem = document.getElementById('droneState');
+            stateElem.textContent = droneDetailData.state.toUpperCase();
+
+            // Remove all badge classes
+            stateElem.classList.remove('badge-idle', 'badge-flying', 'badge-takingoff', 'badge-landing', 'badge-emergency');
+
+            // Add appropriate badge class
+            switch (droneDetailData.state) {
+                case 'IDLE': stateElem.classList.add('badge-idle'); break;
+                case 'FLYING': stateElem.classList.add('badge-flying'); break;
+                case 'TAKING_OFF': stateElem.classList.add('badge-takingoff'); break;
+                case 'LANDING': stateElem.classList.add('badge-landing'); break;
+                case 'EMERGENCY': stateElem.classList.add('badge-emergency'); break;
+            }
+        }
+
+        // Clear selected drone 
+        function clearSelectedDrone() {
+            selectedDroneId = null;
+            droneDetailData = null;
+            document.getElementById('droneDetails').style.display = 'none';
+        }
+
+        // Restart the simulation
+        async function restartSimulation() {
+            try {
+                const response = await fetch(RESTART_URL, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to restart simulation');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Clear selected drone
+                clearSelectedDrone();
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error restarting simulation:', error);
+            }
+        }
+
+        // Create a default drone
+        async function createDefaultDrone() {
+            try {
+                const response = await fetch(CREATE_DRONE_URL, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to create drone');
+
+                const droneId = await response.json();
+                console.log(`Created drone with ID: ${droneId}`);
+
+                // Select the newly created drone
+                selectedDroneId = droneId;
+                fetchDroneDetails(droneId);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error creating drone:', error);
+            }
+        }
+
+        // Take off command
+        async function takeOff() {
+            if (!selectedDroneId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/takeoff`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to take off');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error taking off:', error);
+            }
+        }
+
+        // Land command
+        async function land() {
+            if (!selectedDroneId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/land`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to land');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error landing:', error);
+            }
+        }
+
+        // Move to position
+        async function moveToPosition() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            try {
+                const targetX = parseFloat(document.getElementById('targetX').value);
+                const targetY = parseFloat(document.getElementById('targetY').value);
+                const targetZ = parseFloat(document.getElementById('targetZ').value);
+
+                if (isNaN(targetX) || isNaN(targetY) || isNaN(targetZ)) {
+                    alert('Please enter valid coordinates for X, Y, and Z');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/move`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        x: targetX,
+                        y: targetY,
+                        z: targetZ
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to move');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error moving drone:', error);
+            }
+        }
+
+        // Render the environment
+        function renderEnvironment() {
+            if (!environmentData) return;
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw boundaries
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+            // Draw boundary coordinates
+            const bounds = environmentData.environment.boundaries;
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+
+            // Top-left corner
+            ctx.fillText('(0, 0)', 30, 20);
+
+            // Top-right corner
+            ctx.fillText(`(${bounds[0]}, 0)`, canvas.width - 30, 20);
+
+            // Bottom-left corner
+            ctx.fillText(`(0, ${bounds[1]})`, 30, canvas.height - 10);
+
+            // Bottom-right corner
+            ctx.fillText(`(${bounds[0]}, ${bounds[1]})`, canvas.width - 30, canvas.height - 10);
+
+            // Draw grid (every 10 units)
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x <= bounds[0]; x += 10) {
+                ctx.beginPath();
+                ctx.moveTo(x * scaleX, 0);
+                ctx.lineTo(x * scaleX, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= bounds[1]; y += 10) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * scaleY);
+                ctx.lineTo(canvas.width, y * scaleY);
+                ctx.stroke();
+            }
+
+            // Draw obstacles
+            environmentData.environment.obstacles.forEach(obstacle => {
+                ctx.fillStyle = 'gray';
+                const x = obstacle.position.x * scaleX - (obstacle.dimensions[0] * scaleX / 2);
+                const y = obstacle.position.y * scaleY - (obstacle.dimensions[1] * scaleY / 2);
+                const width = obstacle.dimensions[0] * scaleX;
+                const height = obstacle.dimensions[1] * scaleY;
+
+                ctx.fillRect(x, y, width, height);
+
+                // Label the obstacle
+                ctx.fillStyle = 'black';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const centerX = x + width / 2;
+                const centerY = y + height / 2;
+                ctx.fillText(obstacle.name, centerX, centerY);
+            });
+
+            // Draw wind indicators
+            environmentData.environment.wind_conditions.forEach(wind => {
+                const gridX = wind.grid_position.x * 10 * scaleX + 5 * scaleX;
+                const gridY = wind.grid_position.y * 10 * scaleY + 5 * scaleY;
+
+                const windLength = Math.min(wind.speed * 5, 20); // Scale wind vector
+
+                ctx.strokeStyle = 'blue';
+                ctx.lineWidth = 2;
+
+                // Draw wind vector
+                ctx.beginPath();
+                ctx.moveTo(gridX, gridY);
+                ctx.lineTo(
+                    gridX + wind.direction[0] * windLength * scaleX,
+                    gridY + wind.direction[1] * windLength * scaleY
+                );
+                ctx.stroke();
+
+                // Draw arrowhead
+                const angle = Math.atan2(
+                    wind.direction[1],
+                    wind.direction[0]
+                );
+
+                const tipX = gridX + wind.direction[0] * windLength * scaleX;
+                const tipY = gridY + wind.direction[1] * windLength * scaleY;
+
+                ctx.beginPath();
+                ctx.moveTo(tipX, tipY);
+                ctx.lineTo(
+                    tipX - 10 * Math.cos(angle - Math.PI / 6),
+                    tipY - 10 * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.lineTo(
+                    tipX - 10 * Math.cos(angle + Math.PI / 6),
+                    tipY - 10 * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.closePath();
+                ctx.fillStyle = 'blue';
+                ctx.fill();
+            });
+
+            // Draw drones
+            environmentData.drones.forEach(drone => {
+                const x = drone.position.x * scaleX;
+                const y = drone.position.y * scaleY;
+
+                // Draw highlight for selected drone
+                if (drone.id === selectedDroneId) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 12, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'gold';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Set drone color based on state to match the legend
+                switch (drone.state) {
+                    case 'IDLE': ctx.fillStyle = 'green'; break;
+                    case 'FLYING': ctx.fillStyle = 'blue'; break;
+                    case 'TAKING_OFF': ctx.fillStyle = 'purple'; break;
+                    case 'LANDING': ctx.fillStyle = 'orange'; break;
+                    case 'EMERGENCY': ctx.fillStyle = 'red'; break;
+                    default: ctx.fillStyle = 'black';
+                }
+
+                // Draw the drone
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw outline
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Display only altitude with BIG BLACK TEXT
+                const altText = `${drone.position.z.toFixed(1)}m`;
+                ctx.font = 'bold 16px Arial';
+                ctx.fillStyle = 'black';
+
+                // Add white background to ensure text is visible on any background
+                const textWidth = ctx.measureText(altText).width;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(x + 25, y - 20, textWidth + 6, 24);
+
+                // Draw the altitude text
+                ctx.fillStyle = 'black';
+                ctx.fillText(altText, x + 28, y - 3);
+            });
+        }
+
+        // Handle canvas click to select a drone
+        canvas.addEventListener('click', function (event) {
+            if (!environmentData) return;
+
+            // Get click coordinates relative to canvas
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (event.clientX - rect.left) / scaleX;
+            const clickY = (event.clientY - rect.top) / scaleY;
+
+            // Find a drone that was clicked
+            let clickedDrone = null;
+            const clickRadius = 8 / Math.min(scaleX, scaleY); // Convert 8px to environment units
+
+            for (const drone of environmentData.drones) {
+                const dx = drone.position.x - clickX;
+                const dy = drone.position.y - clickY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= clickRadius) {
+                    clickedDrone = drone;
+                    break;
+                }
+            }
+
+            if (clickedDrone) {
+                // If clicked a drone, select it and show details
+                selectedDroneId = clickedDrone.id;
+                fetchDroneDetails(clickedDrone.id);
+            } else {
+                // If clicked empty space, deselect
+                clearSelectedDrone();
+            }
+
+            renderEnvironment();
+        });
+
+        // Initial data fetch
+        fetchData();
+
+        // Auto-refresh every 1 second
+        setInterval(fetchData, 1000);
+
+        // Add these functions to handle the LLM Autopilot
+        let selectedDroneHasAutopilot = false;
+
+        function initializeAutopilot() {
+            if (!selectedDroneId) {
+                alert("Please select a drone first");
+                return;
+            }
+
+            fetch(`${API_BASE}/autopilot/${selectedDroneId}/initialize`, {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Autopilot initialized:", data);
+                    selectedDroneHasAutopilot = true;
+                    document.getElementById('sendCommandBtn').disabled = false;
+                    document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
+                    document.getElementById('initAutopilotBtn').disabled = true;
+                })
+                .catch(error => {
+                    console.error("Error initializing autopilot:", error);
+                    alert(`Error initializing autopilot: ${error.message}`);
+                });
+        }
+
+        function sendNLCommand() {
+            if (!selectedDroneId || !selectedDroneHasAutopilot) {
+                alert("Please select a drone and initialize its autopilot first");
+                return;
+            }
+
+            const command = document.getElementById('nlCommand').value.trim();
+            if (!command) {
+                alert("Please enter a command");
+                return;
+            }
+
+            // Display loading indicator
+            const resultDiv = document.getElementById('commandResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div style="text-align: center;">Processing command...</div>';
+
+            fetch(`${API_BASE}/autopilot/${selectedDroneId}/command`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: command })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Command result:", data);
+                    resultDiv.innerHTML = `
+                    <div style="margin-bottom: 5px; font-weight: bold;">Result:</div>
+                    <div style="white-space: pre-wrap; font-family: monospace;">${data.result}</div>
+                `;
+
+                    // Refresh drone data
+                    fetchDroneDetails(selectedDroneId);
+                })
+                .catch(error => {
+                    console.error("Error executing command:", error);
+                    resultDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+                });
+        }
+
+        // Modify selectDrone function to reset autopilot state
+        const originalSelectDrone = selectDrone;
+        selectDrone = function (droneId) {
+            originalSelectDrone(droneId);
+
+            // Reset autopilot state
+            selectedDroneHasAutopilot = false;
+            document.getElementById('sendCommandBtn').disabled = true;
+            document.getElementById('initAutopilotBtn').disabled = false;
+            document.getElementById('initAutopilotBtn').textContent = 'Initialize Autopilot';
+            document.getElementById('commandResult').style.display = 'none';
+
+            // Check if the selected drone already has an autopilot
+            fetch(`${API_BASE}/autopilot/list`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data[droneId]) {
+                        selectedDroneHasAutopilot = true;
+                        document.getElementById('sendCommandBtn').disabled = false;
+                        document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
+                        document.getElementById('initAutopilotBtn').disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error checking autopilot status:", error);
+                });
+        }
+    </script>
+</body>
+
+</html>
