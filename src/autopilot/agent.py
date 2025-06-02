@@ -113,7 +113,7 @@ Use the tools to respond to user queries about the drone or to control the drone
                     buildings.append(obstacle)
                 return buildings
             except Exception as e:
-                return f"Failed to get buildings: {str(e)}"
+                raise RuntimeError(f"Failed to get buildings: {str(e)}")
 
         # Return the list of tools
         return [get_telemetry, take_off, land, move_to, get_buildings]
