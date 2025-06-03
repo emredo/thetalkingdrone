@@ -26,7 +26,6 @@ class DroneDetails(BaseModel):
     id: str
     name: str
     state: str
-    fuel_type: str
     fuel_level: float
     fuel_capacity: float
     fuel_percentage: float
@@ -97,7 +96,6 @@ def get_drone_details(
         id=drone.drone_id,
         name=drone.model.name,
         state=drone.state.value,
-        fuel_type=drone.model.fuel_type.value,
         fuel_level=drone.fuel_level,
         fuel_capacity=drone.model.fuel_capacity,
         fuel_percentage=telemetry["fuel_percentage"],

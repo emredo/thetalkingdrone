@@ -16,14 +16,6 @@ class DroneState(str, Enum):
     MAINTENANCE = "MAINTENANCE"
 
 
-class FuelType(str, Enum):
-    """Enum representing possible fuel types."""
-
-    BATTERY = "battery"
-    GASOLINE = "gasoline"
-    HYDROGEN = "hydrogen"
-
-
 class DroneModel(BaseModel):
     """Model containing static drone specifications."""
 
@@ -36,7 +28,6 @@ class DroneModel(BaseModel):
     )
     max_payload: float = Field(description="Maximum payload capacity in kg")
     fuel_capacity: float = Field(description="Fuel capacity in units")
-    fuel_type: FuelType = Field(default=FuelType.BATTERY)
     fuel_consumption_rate: float = Field(
         description="Fuel consumption per minute of flight"
     )

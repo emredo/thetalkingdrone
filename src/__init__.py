@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from src.autopilot.api import router as autopilot_router
 from src.config.settings import settings
 from src.drone.api import router as drone_router
-from src.drone.models import DroneModel, FuelType
+from src.drone.models import DroneModel
 from src.drone.service import DroneService
 from src.environment.api import router as environment_router
 from src.environment.api import set_environment_instance
@@ -208,7 +208,6 @@ def create_app() -> FastAPI:
                 dimensions=settings.default_drone_dimensions,
                 max_payload=settings.default_drone_max_payload,
                 fuel_capacity=settings.default_drone_fuel_capacity,
-                fuel_type=FuelType.BATTERY,
                 fuel_consumption_rate=settings.default_drone_fuel_consumption_rate,
             )
 
