@@ -2,11 +2,11 @@ import threading
 import time
 
 from src.config.settings import Settings
-from ..models.intersection_models import Location
 from src.utils.logger import logger
 
-from ..models.environment import EnvironmentState, Obstacle
-from ..models.exceptions import ObstacleCollisionException, OutOfBoundsException
+from src.models.intersection_models import EnvironmentState
+from src.models.environment import Obstacle, Location
+from src.models.exceptions import ObstacleCollisionException, OutOfBoundsException
 
 
 class EnvironmentService:

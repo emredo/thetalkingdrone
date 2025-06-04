@@ -1,4 +1,4 @@
-from src.models.environment import EnvironmentState, Location, Obstacle
+from src.models.environment import Location, Obstacle
 from src.models.exceptions import (
     EnvironmentException,
     InvalidLocationException,

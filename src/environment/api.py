@@ -2,7 +2,6 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends
 
-from src.drone.api import _drone_instances
 from src.environment.service import EnvironmentService
 
 router = APIRouter(prefix="/environment", tags=["environment"])
@@ -60,7 +59,7 @@ def get_environment_state(
             "state": drone_service.drone.state.value,
             "fuel_level": drone_service.drone.fuel_level,
         }
-        for drone_id, drone_service in _drone_instances.items()
+        for drone_id, drone_service in environment.state.drones.items()
     ]
 
     return {"environment": env_state, "drones": drones}
