@@ -12,6 +12,7 @@ from src.models import (
 )
 from src.models.physical_models import Location, Obstacle
 from src.services.drone import DroneService
+from src.constant.keys import GOOGLE_API_KEY
 
 
 class AutoPilotAgent:
@@ -37,6 +38,7 @@ class AutoPilotAgent:
             max_tokens=1000,
             max_retries=3,
             temperature=0.2,
+            google_api_key=GOOGLE_API_KEY,
         )
 
         # Create tools from drone service methods

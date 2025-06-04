@@ -110,13 +110,13 @@ def create_default_drone():
         )
 
         # Create drone at a safe starting position
-        start_location = Location(x=10.0, y=10.0, z=0.0)
+        start_location = Location(x=0.20, y=0.20, z=0.0)
 
         environment = get_environment_instance()
         # Create drone service
         drone_service = DroneService.create_drone(model=model, location=start_location)
 
-        environment.state.drones[drone_service.drone.drone_id] = drone_service.drone
+        environment.state.drones[drone_service.drone.drone_id] = drone_service
 
         return drone_service.drone.drone_id
 

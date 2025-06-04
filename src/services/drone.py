@@ -56,9 +56,6 @@ class DroneService:
         if drone_id is None:
             drone_id = str(uuid.uuid4())
 
-        if location is None:
-            location = Location()
-
         environment = get_environment_instance()
         environment.validate_location(location)
 
