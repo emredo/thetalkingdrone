@@ -147,7 +147,7 @@
     <div class="controls">
         <button onclick="fetchData()">Refresh</button>
         <button onclick="restartSimulation()">Restart Simulation</button>
-        <button onclick="createDefaultDrone()">Add Default Drone</button>
+        <button onclick="createDefaultSimulationDrone()">Add Default Drone</button>
         <span id="simTime">Simulation Time: 0.00s</span>
     </div>
 
@@ -398,9 +398,9 @@
         }
 
         // Create a default drone
-        async function createDefaultDrone() {
+        async function createDefaultSimulationDrone() {
             try {
-                const response = await fetch("/environment/create-default-drone", {
+                const response = await fetch("/environment/create-default-simulation-drone", {
                     method: 'POST'
                 });
 

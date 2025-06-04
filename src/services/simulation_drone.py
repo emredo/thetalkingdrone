@@ -1,8 +1,7 @@
 import math
 import threading
 import time
-import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from src.models.exceptions import (
     DroneException,
@@ -14,7 +13,6 @@ from src.models.exceptions import (
 )
 from src.models.physical_models import (
     DroneData,
-    DroneModel,
     DroneState,
     Location,
     Obstacle,
@@ -28,43 +26,13 @@ class SimulationDroneService(DroneServiceBase):
 
     def __init__(self, drone_data: DroneData):
         """Initialize drone service with drone data and environment."""
-        super().__init__()
+        super().__init__(drone_data)
         logger.info("Initializing drone service")
-        self.drone = drone_data
 
         # Start the drone thread
         self.start_service()
 
     # Implement ABC methods
-    def create_drone(
-        cls,
-        model: DroneModel,
-        location: Location,
-        drone_id: Optional[str] = None,
-    ) -> DroneServiceBase:
-        """Factory method to create a new drone service instance."""
-        from src.controller.environment import get_environment_instance
-
-        if drone_id is None:
-            drone_id = str(uuid.uuid4())
-
-        environment = get_environment_instance()
-        environment.validate_location(location)
-
-        # Create drone service
-        # Create drone data with full fuel
-        drone_data = DroneData(
-            drone_id=drone_id,
-            model=model,
-            location=location,
-            fuel_level=model.fuel_capacity,
-        )
-
-        # Set environment and return drone service
-        drone_service = cls(drone_data)
-        drone_service.set_environment(environment)
-        return drone_service
-
     def update(self) -> None:
         """Update drone state based on elapsed time."""
         current_time = time.time()

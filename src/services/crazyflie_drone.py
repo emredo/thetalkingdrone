@@ -9,7 +9,7 @@ from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.motion_commander import MotionCommander
 
 from src.models.physical_models import (
-    DroneModel,
+    DroneData,
     Obstacle,
 )  # Assuming Obstacle might be needed
 from src.services.drone_base import (  # Assuming Location is also needed
@@ -26,10 +26,10 @@ class CrazyFlieService(DroneServiceBase):
     Service for managing a Crazyflie drone.
     """
 
-    def __init__(self, uri: str):
-        super().__init__()
-        logger.info(f"Initializing CrazyFlieService for URI: {uri}")
-        self._uri = uri
+    def __init__(self, drone_data: DroneData):
+        super().__init__(drone_data)
+        self._uri = self.drone.model.name
+        logger.info(f"Initializing CrazyFlieService for URI: {self._uri}")
         self._cf = Crazyflie(rw_cache="./cache")
         self._scf: Optional[SyncCrazyflie] = None
         self._mc: Optional[MotionCommander] = None
@@ -47,15 +47,6 @@ class CrazyFlieService(DroneServiceBase):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     # Implement ABC methods
-    def create_drone(
-        cls,
-        model: DroneModel,
-        location: Location,
-        drone_id: Optional[str] = None,
-    ) -> DroneServiceBase:
-        """Create a new Crazyflie service instance."""
-        return cls(uri=drone_id)
-
     def update(self) -> None:
         """Update the drone state based on elapsed time."""
         # current_time = time.time()

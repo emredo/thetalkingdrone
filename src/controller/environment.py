@@ -1,8 +1,10 @@
+import uuid
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.models.physical_models import DroneModel, Location
+from src.services.crazyflie_drone import CrazyFlieService
 from src.services.environment import EnvironmentService
 from src.services.simulation_drone import SimulationDroneService
 
@@ -91,15 +93,18 @@ def restart_simulation():
 
 
 # Add example endpoint to create a default drone
-@router.post("/create-default-drone", response_model=str)
-def create_default_drone():
+@router.post("/create-default-simulation-drone", response_model=str)
+def create_default_simulation_drone(
+    name: str,
+    location: Location,
+):
     """Create a default drone for testing."""
     try:
         # Create default drone model based on settings
         from src.config.settings import Settings
 
         model = DroneModel(
-            name=Settings.default_drone_name,
+            name=name,
             max_speed=Settings.default_drone_max_speed,
             max_altitude=Settings.default_drone_max_altitude,
             weight=Settings.default_drone_weight,
@@ -109,17 +114,48 @@ def create_default_drone():
         )
 
         # Create drone at a safe starting position
-        start_location = Location(x=0.20, y=0.20, z=0.0)
 
         environment = get_environment_instance()
         # Create drone service
-        drone_service = SimulationDroneService.create_drone(
-            model=model, location=start_location
+        drone_id = str(uuid.uuid4())
+        drone_service: SimulationDroneService = SimulationDroneService.create_drone(
+            model=model, location=location, drone_id=drone_id
         )
 
         environment.drones[drone_service.drone.drone_id] = drone_service
 
         return drone_service.drone.drone_id
 
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/create-crazyflie-drone", response_model=str)
+def create_crazyflie_drone(
+    name: str,
+    location: Location,
+):
+    """Create a default drone for testing."""
+    from src.config.settings import Settings
+
+    try:
+        environment = get_environment_instance()
+        model = DroneModel(
+            name=name,
+            max_speed=Settings.default_drone_max_speed,
+            max_altitude=Settings.default_drone_max_altitude,
+            weight=Settings.default_drone_weight,
+            dimensions=Settings.default_drone_dimensions,
+            fuel_capacity=Settings.default_drone_fuel_capacity,
+            fuel_consumption_rate=Settings.default_drone_fuel_consumption_rate,
+        )
+        drone_id = str(uuid.uuid4())
+        drone_service: CrazyFlieService = CrazyFlieService.create_drone(
+            model=model, location=location, drone_id=drone_id
+        )
+
+        environment.drones[drone_service.drone.drone_id] = drone_service
+
+        return drone_service.drone.drone_id
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

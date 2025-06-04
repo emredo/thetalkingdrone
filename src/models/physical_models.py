@@ -4,6 +4,14 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field, validator
 
 
+class Telemetry(BaseModel):
+    """Model containing telemetry data."""
+
+    x: float = Field(default=0.0, description="X coordinate")
+    y: float = Field(default=0.0, description="Y coordinate")
+    z: float = Field(default=0.0, description="Z coordinate (altitude)")
+
+
 class DroneState(str, Enum):
     """Enum representing possible drone states."""
 
