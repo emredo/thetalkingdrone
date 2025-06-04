@@ -1,21 +1,30 @@
 import threading
 import time
-from typing import Tuple
+from typing import Dict
 
-from src.environment.sample_obstacles import get_sample_obstacles
+from src.models import (
+    ObstacleCollisionException,
+    OutOfBoundsException,
+)
+from src.models.physical_models import EnvironmentFeatures, Location, Obstacle
+from src.services.drone import DroneService
 from src.utils.logger import logger
-
-from .exceptions import ObstacleCollisionException, OutOfBoundsException
-from .models import EnvironmentState, Location, Obstacle, WindCondition
 
 
 class EnvironmentService:
     """Service for managing the environment state and interactions."""
 
-    def __init__(self, boundaries: Tuple[float, float, float] = (100.0, 100.0, 50.0)):
+    def __init__(self):
         """Initialize environment with boundaries."""
         logger.info("Initializing environment service")
-        self.state = EnvironmentState(boundaries=boundaries)
+        from src.config.settings import Settings
+
+        self.features = EnvironmentFeatures(
+            boundaries=Settings.boundaries,
+            obstacles=Settings.environment_obstacles,
+        )
+        self.drones: Dict[str, DroneService] = {}
+        self.time = 0.0
         self._last_update_time = time.time()
 
         # Threading setup
@@ -28,26 +37,11 @@ class EnvironmentService:
 
     def add_obstacle(self, obstacle: Obstacle) -> None:
         """Add an obstacle to the environment."""
-        self.state.obstacles.append(obstacle)
-
-    def set_wind_condition(
-        self, grid_position: Tuple[int, int], wind: WindCondition
-    ) -> None:
-        """Set wind condition for a specific grid position."""
-        self.state.wind_conditions[grid_position] = wind
-
-    def get_wind_at_location(self, location: Location) -> WindCondition:
-        """Get wind condition at a specific location."""
-        # Convert location to grid coordinates (simple approach)
-        grid_x = int(location.x // 10)
-        grid_y = int(location.y // 10)
-
-        # Return the wind condition for this grid if exists, otherwise default
-        return self.state.wind_conditions.get((grid_x, grid_y), WindCondition())
+        self.features.obstacles.append(obstacle)
 
     def check_collision(self, location: Location) -> bool:
         """Check if location collides with any obstacle."""
-        for obstacle in self.state.obstacles:
+        for obstacle in self.features.obstacles:
             obs_loc = obstacle.location
             dimensions = obstacle.dimensions
 
@@ -70,11 +64,11 @@ class EnvironmentService:
         # Check if location is within environment boundaries
         if (
             location.x < 0
-            or location.x > self.state.boundaries[0]
+            or location.x > self.features.boundaries[0]
             or location.y < 0
-            or location.y > self.state.boundaries[1]
+            or location.y > self.features.boundaries[1]
             or location.z < 0
-            or location.z > self.state.boundaries[2]
+            or location.z > self.features.boundaries[2]
         ):
             raise OutOfBoundsException(
                 f"Location {location} is outside environment boundaries"
@@ -88,7 +82,7 @@ class EnvironmentService:
 
     def update_time(self, time_delta: float) -> None:
         """Update the environment simulation time."""
-        self.state.time += time_delta
+        self.time += time_delta
 
     def update_simulation_time(self) -> None:
         """Update the simulation time based on real elapsed time."""
@@ -141,23 +135,14 @@ class EnvironmentService:
         self.stop_simulation()
 
         # Reset simulation time
-        self.state.time = 0.0
+        self.time = 0.0
         self._last_update_time = time.time()
 
         # Reset environment state (keeping the same boundaries)
-        boundaries = self.state.boundaries
-        self.state = EnvironmentState(boundaries=boundaries)
+        from src.config.settings import Settings
 
-        # Add sample obstacles
-        for obstacle in get_sample_obstacles():
-            self.add_obstacle(obstacle)
-
-        # Add a sample wind condition
-        self.set_wind_condition(
-            (3, 5), WindCondition(direction=(1.0, 0.5, 0.0), speed=8.0)
-        )
-        self.set_wind_condition(
-            (7, 2), WindCondition(direction=(-0.5, 1.0, 0.0), speed=5.0)
+        self.features = EnvironmentFeatures(
+            boundaries=Settings.boundaries, obstacles=Settings.environment_obstacles
         )
 
         # Restart the simulation thread

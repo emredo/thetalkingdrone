@@ -1,63 +1,47 @@
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import List, Tuple
+
+from src.models.physical_models import Location, Obstacle
 
 
-class Settings(BaseModel):
+class Settings:
     """Application settings loaded from environment variables."""
 
     # App settings
-    app_name: str = Field(
-        default="The Talking Drone", description="Name of the application"
-    )
-    debug: bool = Field(default=False, description="Debug mode flag")
+    app_name: str = "The Talking Drone"
+    debug: bool = False
 
     # Environment settings
-    environment_max_x: float = Field(
-        default=100.0, description="Maximum X coordinate for environment"
-    )
-    environment_max_y: float = Field(
-        default=100.0, description="Maximum Y coordinate for environment"
-    )
-    environment_max_z: float = Field(
-        default=50.0, description="Maximum Z coordinate for environment"
-    )
+    boundaries: Tuple[float, float, float] = (1.5, 1.5, 1.5)
+    # Environment obstacles
+    environment_obstacles: List[Obstacle] = [
+        Obstacle(
+            location=Location(x=0.70, y=0.50, z=0.0),
+            dimensions=(0.10, 0.10, 0.20),
+            name="İTÜ Ayazağa",
+        ),
+        Obstacle(
+            location=Location(x=0.25, y=0.70, z=0.0),
+            dimensions=(0.10, 0.10, 0.20),
+            name="Taksim İlk Yardım",
+        ),
+        Obstacle(
+            location=Location(x=0.30, y=0.10, z=0.0),
+            dimensions=(0.10, 0.10, 0.20),
+            name="Gümüşsuyu",
+        ),
+    ]
 
     # Default drone model settings
-    default_drone_name: str = Field(
-        default="Standard Drone", description="Default drone model name"
-    )
-    default_drone_max_speed: float = Field(
-        default=1.0, description="Default drone max speed in m/s"
-    )
-    default_drone_max_altitude: float = Field(
-        default=100.0, description="Default drone max altitude in meters"
-    )
-    default_drone_weight: float = Field(
-        default=1.5, description="Default drone weight in kg"
-    )
-    default_drone_dimensions: tuple = Field(
-        default=(0.5, 0.5, 0.2), description="Default drone dimensions in meters"
-    )
-    default_drone_max_payload: float = Field(
-        default=0.5, description="Default drone max payload in kg"
-    )
-    default_drone_fuel_capacity: float = Field(
-        default=100.0, description="Default drone fuel capacity"
-    )
-    default_drone_fuel_consumption_rate: float = Field(
-        default=1.0, description="Default drone fuel consumption per minute"
-    )
-
-    # API settings
-    api_prefix: str = Field(default="/api/v1", description="API route prefix")
+    default_drone_name: str = "Standard Drone"
+    default_drone_max_speed: float = 1.0
+    default_drone_max_altitude: float = 1.5
+    default_drone_weight: float = 0.100
+    default_drone_dimensions: tuple = (0.10, 0.10, 0.02)
+    default_drone_fuel_capacity: float = 100.0
+    default_drone_fuel_consumption_rate: float = 1.0
 
     # LangChain settings
-    langchain_model: str = Field(
-        default="gpt-3.5-turbo", description="LLM model to use for LangChain"
-    )
-    langchain_api_key: Optional[str] = Field(
-        default=None, description="API key for LLM service"
-    )
+    langchain_model: str = "google_genai:gemini-2.5-flash-preview-05-20"
 
     class Config:
         """Pydantic config"""
@@ -65,12 +49,3 @@ class Settings(BaseModel):
         env_file = ".env"
         env_file_encoding = "utf-8"
         env_prefix = "TALKINGDRONE_"
-
-
-# Create a global settings instance
-settings = Settings()
-
-
-def get_settings() -> Settings:
-    """Return the settings instance."""
-    return settings

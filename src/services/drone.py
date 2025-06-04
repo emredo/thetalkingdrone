@@ -4,28 +4,32 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
-from src.environment.exceptions import ObstacleCollisionException, OutOfBoundsException
-from src.environment.models import Location, Obstacle
-from src.environment.service import EnvironmentService
-from src.utils.logger import logger
-
-from .exceptions import (
+from src.models.physical_models import (
+    DroneData,
+    DroneModel,
+    DroneState,
+    Location,
+    Obstacle,
+)
+from src.models.exceptions import (
     DroneException,
     DroneNotOperationalException,
     InsufficientFuelException,
     InvalidDroneCommandException,
+    ObstacleCollisionException,
+    OutOfBoundsException,
 )
-from .models import DroneData, DroneModel, DroneState
+from src.utils.logger import logger
 
 
 class DroneService:
     """Service for managing drone operations and interactions with the environment."""
 
-    def __init__(self, drone_data: DroneData, environment: EnvironmentService):
+    def __init__(self, drone_data: DroneData):
         """Initialize drone service with drone data and environment."""
         logger.info("Initializing drone service")
         self.drone = drone_data
-        self.environment = environment
+        self.environment = None
         self._last_update_time = time.time()
 
         # Threading setup
@@ -36,24 +40,26 @@ class DroneService:
         # Start the drone thread
         self.start_drone_thread()
 
+    def set_environment(self, environment):
+        self.environment = environment
+
     @classmethod
     def create_drone(
         cls,
         model: DroneModel,
-        environment: EnvironmentService,
+        location: Location,
         drone_id: Optional[str] = None,
-        location: Optional[Location] = None,
     ) -> "DroneService":
         """Factory method to create a new drone service instance."""
+        from src.controller.environment import get_environment_instance
+
         if drone_id is None:
             drone_id = str(uuid.uuid4())
 
-        if location is None:
-            location = Location()
-
-        # Validate the starting location
+        environment = get_environment_instance()
         environment.validate_location(location)
 
+        # Create drone service
         # Create drone data with full fuel
         drone_data = DroneData(
             drone_id=drone_id,
@@ -62,7 +68,10 @@ class DroneService:
             fuel_level=model.fuel_capacity,
         )
 
-        return cls(drone_data, environment)
+        # Set environment and return drone service
+        drone_service = cls(drone_data)
+        drone_service.set_environment(environment)
+        return drone_service
 
     def update(self) -> None:
         """Update drone state based on elapsed time."""
@@ -128,7 +137,7 @@ class DroneService:
             self.update()
 
             # Small sleep to prevent CPU overuse
-            self._stop_event.wait(0.1)  # Update every 100ms
+            self._stop_event.wait(0.2)  # Update every 200ms
 
     def take_off(self) -> None:
         """Command drone to take off to specified altitude."""
@@ -409,19 +418,16 @@ class DroneService:
             * 100,
             "speed": self.drone.speed,
             "heading": self.drone.heading,
-            "wind_conditions": self.environment.get_wind_at_location(
-                self.drone.location
-            ).dict(),
         }
 
         # Add custom telemetry
         telemetry.update(self.drone.telemetry)
 
         return telemetry
-    
+
     def get_obstacles(self) -> List[Obstacle]:
         """Get the list of obstacles in the environment."""
-        return self.environment.state.obstacles
+        return self.environment.features.obstacles
 
     def __del__(self):
         """Destructor to ensure thread is properly cleaned up."""

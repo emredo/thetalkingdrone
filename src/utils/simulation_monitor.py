@@ -5,7 +5,7 @@ Simulation monitor module to track and log simulation time periodically.
 import threading
 from typing import Optional
 
-from src.environment.service import EnvironmentService
+from src.services.environment import EnvironmentService
 from src.utils.logger import logger
 
 
@@ -56,7 +56,7 @@ class SimulationMonitor:
         """Internal monitoring loop that runs in a separate thread."""
         while not self._stop_event.is_set():
             # Log the current simulation time (but don't update it)
-            sim_time = self.environment.state.time
+            sim_time = self.environment.time
             logger.info(f"Simulation time: {sim_time:.2f}s")
 
             # Sleep for the specified interval
