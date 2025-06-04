@@ -73,7 +73,7 @@ Use the tools to respond to user queries about the drone or to control the drone
         # Create the LangGraph agent using ReAct agent
         try:
             self.agent = create_react_agent(
-                model=self.llm, tools=self.tools, state_modifier=system_message
+                model=self.llm, tools=self.tools, prompt=system_message
             )
             self.is_initialized = True
         except Exception as e:

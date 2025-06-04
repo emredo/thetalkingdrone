@@ -200,11 +200,11 @@
         </div>
         <div class="form-row">
             <label for="droneX">X Position:</label>
-            <input type="number" id="droneX" placeholder="X coordinate" step="0.1" value="2.0">
+            <input type="number" id="droneX" placeholder="X coordinate" step="0.1" value="1.2">
         </div>
         <div class="form-row">
             <label for="droneY">Y Position:</label>
-            <input type="number" id="droneY" placeholder="Y coordinate" step="0.1" value="2.0">
+            <input type="number" id="droneY" placeholder="Y coordinate" step="0.1" value="1.1">
         </div>
         <div class="form-row">
             <label for="droneZ">Z Position:</label>
@@ -457,29 +457,6 @@
                 fetchData();
             } catch (error) {
                 console.error('Error restarting simulation:', error);
-            }
-        }
-
-        // Create a default drone
-        async function createDefaultSimulationDrone() {
-            try {
-                const response = await fetch("/environment/create-simulation-drone", {
-                    method: 'POST'
-                });
-
-                if (!response.ok) throw new Error('Failed to create drone');
-
-                const droneId = await response.json();
-                console.log(`Created drone with ID: ${droneId}`);
-
-                // Select the newly created drone
-                selectedDroneId = droneId;
-                fetchDroneDetails(droneId);
-
-                // Refresh the data
-                fetchData();
-            } catch (error) {
-                console.error('Error creating drone:', error);
             }
         }
 

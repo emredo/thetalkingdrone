@@ -3,6 +3,7 @@ import threading
 import time
 from typing import Any, Dict, List
 
+from src.constant.constants import THREAD_UPDATE_INTERVAL
 from src.models.physical_models import (
     DroneData,
     DroneModel,
@@ -52,18 +53,17 @@ class DroneServiceBase(ABC):
 
     def _drone_loop(self) -> None:
         """Internal drone loop that runs in a separate thread."""
-        logger.info(f"CrazyFlie drone loop started for {self._uri}")
+        logger.info(f"DroneData drone loop started for {self.drone.model.name}")
         while not self._stop_event.is_set():
             try:
                 self.update()
             except Exception as e:
-                logger.error(f"Error in CrazyFlie drone loop for {self._uri}: {e}")
+                logger.error(f"Error in drone loop for {self.drone.model.name}: {e}")
                 # Decide if to break loop or continue
 
             # Small sleep to prevent CPU overuse
-            # Adjust sleep duration as needed (e.g., 0.1 to 1.0 seconds)
-            self._stop_event.wait(0.2)  # Update every 200ms, consistent with simulation
-        logger.info(f"CrazyFlie drone loop stopped for {self._uri}")
+            self._stop_event.wait(THREAD_UPDATE_INTERVAL)
+        logger.info(f"DroneData drone loop stopped for {self.drone.model.name}")
 
     def __del__(self):
         """Destructor to ensure resources are cleaned up."""
