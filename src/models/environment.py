@@ -1,8 +1,14 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 
 from pydantic import BaseModel, Field
 
-from src.models.intersection_models import DroneData, Location
+
+class Location(BaseModel):
+    """Location model representing 3D coordinates."""
+
+    x: float = Field(default=0.0, description="X coordinate")
+    y: float = Field(default=0.0, description="Y coordinate")
+    z: float = Field(default=0.0, description="Z coordinate (altitude)")
 
 
 class Obstacle(BaseModel):
@@ -13,18 +19,3 @@ class Obstacle(BaseModel):
         description="Width, length, height of the obstacle"
     )
     name: Optional[str] = Field(default=None, description="Identifier for the obstacle")
-
-
-class EnvironmentState(BaseModel):
-    """Model representing the state of the environment."""
-
-    drones: Dict[str, DroneData] = Field(
-        default_factory=dict, description="Drones in the environment"
-    )
-    boundaries: Tuple[float, float, float] = Field(
-        description="Maximum (x, y, z) coordinates defining the environment boundaries"
-    )
-    obstacles: List[Obstacle] = Field(
-        default_factory=list, description="List of obstacles in the environment"
-    )
-    time: float = Field(default=0.0, description="Current simulation time")
