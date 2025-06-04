@@ -1,18 +1,70 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+import threading
+import time
+from typing import Any, Dict, List, Optional
 
 from src.models.physical_models import (
+    DroneModel,
     Location,
     Obstacle,
 )
+from src.utils.logger import logger
 
 
 class DroneServiceBase(ABC):
     """Abstract Base Class for drone services."""
 
+    def __init__(self):
+        self._stop_event = threading.Event()
+        self._drone_thread = None
+        self._is_running = False
+        self.environment = None
+        self._last_update_time = time.time()  # Added for consistency with simulation
+
+    def set_environment(self, environment: Any) -> None:
+        """Set the environment for the drone."""
+        self.environment = environment
+
+    def _drone_loop(self) -> None:
+        """Internal drone loop that runs in a separate thread."""
+        logger.info(f"CrazyFlie drone loop started for {self._uri}")
+        while not self._stop_event.is_set():
+            try:
+                self.update()
+            except Exception as e:
+                logger.error(f"Error in CrazyFlie drone loop for {self._uri}: {e}")
+                # Decide if to break loop or continue
+
+            # Small sleep to prevent CPU overuse
+            # Adjust sleep duration as needed (e.g., 0.1 to 1.0 seconds)
+            self._stop_event.wait(0.2)  # Update every 200ms, consistent with simulation
+        logger.info(f"CrazyFlie drone loop stopped for {self._uri}")
+
+    def __del__(self):
+        """Destructor to ensure resources are cleaned up."""
+        self.stop_service()
+
+    @classmethod
+    @abstractmethod
+    def create_drone(
+        cls, model: DroneModel, location: Location, drone_id: Optional[str] = None
+    ) -> "DroneServiceBase":
+        """Factory method to create a new drone service instance."""
+        pass
+
     @abstractmethod
     def update(self) -> None:
         """Update the drone state based on elapsed time."""
+        pass
+
+    @abstractmethod
+    def start_service(self) -> None:
+        """Start the drone service operations (e.g., update loop)."""
+        pass
+
+    @abstractmethod
+    def stop_service(self) -> None:
+        """Stop the drone service operations."""
         pass
 
     @abstractmethod
@@ -33,21 +85,6 @@ class DroneServiceBase(ABC):
     @abstractmethod
     def get_telemetry(self) -> Dict[str, Any]:
         """Get current drone telemetry data."""
-        pass
-
-    @abstractmethod
-    def start_service(self) -> None:
-        """Start the drone service operations (e.g., update loop)."""
-        pass
-
-    @abstractmethod
-    def stop_service(self) -> None:
-        """Stop the drone service operations."""
-        pass
-
-    @abstractmethod
-    def set_environment(self, environment: Any) -> None:
-        """Set the environment for the drone."""
         pass
 
     @abstractmethod

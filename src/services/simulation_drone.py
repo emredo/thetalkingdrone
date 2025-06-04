@@ -28,29 +28,20 @@ class SimulationDroneService(DroneServiceBase):
 
     def __init__(self, drone_data: DroneData):
         """Initialize drone service with drone data and environment."""
+        super().__init__()
         logger.info("Initializing drone service")
         self.drone = drone_data
-        self.environment = None
-        self._last_update_time = time.time()
-
-        # Threading setup
-        self._stop_event = threading.Event()
-        self._drone_thread = None
-        self._is_running = False
 
         # Start the drone thread
         self.start_service()
 
-    def set_environment(self, environment):
-        self.environment = environment
-
-    @classmethod
+    # Implement ABC methods
     def create_drone(
         cls,
         model: DroneModel,
         location: Location,
         drone_id: Optional[str] = None,
-    ) -> "SimulationDroneService":
+    ) -> DroneServiceBase:
         """Factory method to create a new drone service instance."""
         from src.controller.environment import get_environment_instance
 
@@ -131,16 +122,6 @@ class SimulationDroneService(DroneServiceBase):
         self._is_running = False
         logger.info(f"Drone {self.drone.drone_id} thread stopped")
 
-    def _drone_loop(self) -> None:
-        """Internal drone loop that runs in a separate thread."""
-        while not self._stop_event.is_set():
-            # Update drone state
-            self.update()
-
-            # Small sleep to prevent CPU overuse
-            self._stop_event.wait(0.2)  # Update every 200ms
-
-    # Implement ABC methods
     def take_off(self) -> None:
         """Command drone to take off to specified altitude."""
         target_altitude = 1
@@ -430,7 +411,3 @@ class SimulationDroneService(DroneServiceBase):
     def get_obstacles(self) -> List[Obstacle]:
         """Get the list of obstacles in the environment."""
         return self.environment.features.obstacles
-
-    def __del__(self):
-        """Destructor to ensure thread is properly cleaned up."""
-        self.stop_service()

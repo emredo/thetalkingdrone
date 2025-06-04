@@ -7,17 +7,17 @@ import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.motion_commander import MotionCommander
-from cflib.utils import uri_helper
 
-from src.models.physical_models import Obstacle  # Assuming Obstacle might be needed
+from src.models.physical_models import (
+    DroneModel,
+    Obstacle,
+)  # Assuming Obstacle might be needed
 from src.services.drone_base import (  # Assuming Location is also needed
     DroneServiceBase,
     Location,
 )
 from src.utils.logger import logger
 
-# Default URI, can be overridden in constructor or a config file
-URI = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")  # Example URI
 DEFAULT_HEIGHT = 0.3  # Default height for simple takeoff/land
 
 
@@ -26,9 +26,10 @@ class CrazyFlieService(DroneServiceBase):
     Service for managing a Crazyflie drone.
     """
 
-    def __init__(self, uri: Optional[str] = None):
-        logger.info(f"Initializing CrazyFlieService for URI: {uri or URI}")
-        self._uri = uri or URI
+    def __init__(self, uri: str):
+        super().__init__()
+        logger.info(f"Initializing CrazyFlieService for URI: {uri}")
+        self._uri = uri
         self._cf = Crazyflie(rw_cache="./cache")
         self._scf: Optional[SyncCrazyflie] = None
         self._mc: Optional[MotionCommander] = None
@@ -41,16 +42,19 @@ class CrazyFlieService(DroneServiceBase):
             "z": 0.0,
             "battery": None,
         }
-        self._environment = None  # Placeholder for environment if needed
-
-        # Threading setup
-        self._stop_event = threading.Event()
-        self._drone_thread: Optional[threading.Thread] = None
-        self._is_running = False
-        self._last_update_time = time.time()  # Added for consistency with simulation
 
         # Suppress deprecation warnings from cflib
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+    # Implement ABC methods
+    def create_drone(
+        cls,
+        model: DroneModel,
+        location: Location,
+        drone_id: Optional[str] = None,
+    ) -> DroneServiceBase:
+        """Create a new Crazyflie service instance."""
+        return cls(uri=drone_id)
 
     def update(self) -> None:
         """Update the drone state based on elapsed time."""
@@ -263,14 +267,6 @@ class CrazyFlieService(DroneServiceBase):
 
         return self._telemetry_data
 
-    def set_environment(self, environment: Any) -> None:
-        """Set the environment for the drone (if applicable)."""
-        logger.info(f"Setting environment for Crazyflie: {environment}")
-        self._environment = environment
-        # This might be used to configure flight boundaries or get obstacle info
-        # from a shared simulation environment, not directly applicable to physical Crazyflie
-        # without external systems.
-
     def get_obstacles(self) -> List[Obstacle]:
         """Get the list of obstacles in the environment."""
         # For a real Crazyflie, obstacle detection is complex and usually via external sensors or systems.
@@ -278,98 +274,6 @@ class CrazyFlieService(DroneServiceBase):
         logger.info(
             "get_obstacles called. For a physical Crazyflie, this would require external sensors/systems."
         )
-        if self._environment and hasattr(self._environment, "get_obstacles"):
-            return self._environment.get_obstacles()
+        if self.environment and hasattr(self.environment, "get_obstacles"):
+            return self.environment.get_obstacles()
         return []  # Return empty list by default
-
-    def _drone_loop(self) -> None:
-        """Internal drone loop that runs in a separate thread."""
-        logger.info(f"CrazyFlie drone loop started for {self._uri}")
-        while not self._stop_event.is_set():
-            try:
-                self.update()
-            except Exception as e:
-                logger.error(f"Error in CrazyFlie drone loop for {self._uri}: {e}")
-                # Decide if to break loop or continue
-
-            # Small sleep to prevent CPU overuse
-            # Adjust sleep duration as needed (e.g., 0.1 to 1.0 seconds)
-            self._stop_event.wait(0.2)  # Update every 200ms, consistent with simulation
-        logger.info(f"CrazyFlie drone loop stopped for {self._uri}")
-
-    def __del__(self):
-        """Destructor to ensure resources are cleaned up."""
-        self.stop_service()
-
-
-# Example usage (optional, for testing this file directly)
-if __name__ == "__main__":
-    # This is a basic test sequence.
-    # Ensure a Crazyflie is available and URI is correct.
-    # Note: Running this directly requires careful handling of the Crazyflie.
-
-    print("Attempting to initialize and run CrazyFlieService...")
-    # Make sure to have a Crazyflie powered on and accessible via the URI
-    # For safety, this example will not automatically fly without explicit action.
-
-    test_uri = "radio://0/80/2M/E7E7E7E7C3"  # CHANGE THIS TO YOUR DRONE'S URI
-
-    # Check if user wants to proceed with a real drone test
-    proceed = input(
-        f"WARNING: This will attempt to connect to a REAL Crazyflie at {test_uri}. Proceed? (y/n): "
-    )
-
-    if proceed.lower() != "y":
-        print("Test aborted by user.")
-        exit()
-
-    cf_service = None
-    try:
-        cf_service = CrazyFlieService(uri=test_uri)
-        cf_service.start_service()
-
-        if cf_service._is_connected:
-            print("CrazyFlie connected. Telemetry:", cf_service.get_telemetry())
-
-            # Example commands:
-            # print("Attempting takeoff...")
-            # cf_service.take_off()
-            # print("Telemetry after takeoff:", cf_service.get_telemetry())
-            # time.sleep(3)
-
-            # print("Attempting to move to (0.5, 0, 0.5)...")
-            # cf_service.move_to(Location(x=0.5, y=0, z=0.5))
-            # print("Telemetry after move:", cf_service.get_telemetry())
-            # time.sleep(3)
-
-            # print("Attempting to land...")
-            # cf_service.land()
-            # print("Telemetry after land:", cf_service.get_telemetry())
-
-            # For a simple hover test if you don't want complex movements:
-            # print("Taking off to 0.3m...")
-            # cf_service.take_off()
-            # print(f"Current state: {cf_service.get_telemetry()['state']}, altitude: {cf_service.get_telemetry()['z']}")
-            # print("Hovering for 5 seconds...")
-            # time.sleep(5)
-            # print("Landing...")
-            # cf_service.land()
-            # print(f"Landed. Current state: {cf_service.get_telemetry()['state']}")
-
-            print("Test sequence complete (commented out flight commands for safety).")
-            print("You can uncomment flight commands in the __main__ block to test.")
-
-        else:
-            print("Failed to connect to Crazyflie.")
-
-    except ConnectionError as ce:
-        print(f"Connection Error: {ce}")
-    except RuntimeError as re:
-        print(f"Runtime Error during operation: {re}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-    finally:
-        if cf_service:
-            print("Stopping CrazyFlie service...")
-            cf_service.stop_service()
-        print("CrazyFlieService test finished.")
