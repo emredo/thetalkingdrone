@@ -125,13 +125,13 @@ def create_app() -> FastAPI:
     set_environment_instance(environment)
 
     # Include router for drone endpoints
-    app.include_router(drone_router, prefix=Settings.api_prefix)
+    app.include_router(drone_router)
 
     # Include router for environment endpoints
-    app.include_router(environment_router, prefix=Settings.api_prefix)
+    app.include_router(environment_router)
 
     # Include router for autopilot endpoints
-    app.include_router(autopilot_router, prefix=Settings.api_prefix)
+    app.include_router(autopilot_router)
 
     # Mount static files
     app.mount("/viz", StaticFiles(directory="static", html=True), name="viz")

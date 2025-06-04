@@ -41,9 +41,6 @@ class Settings:
     default_drone_fuel_capacity: float = 100.0
     default_drone_fuel_consumption_rate: float = 1.0
 
-    # API settings
-    api_prefix: str = "/api/v1"
-
     # LangChain settings
     langchain_model: str = "google_genai:gemini-2.5-flash-preview-05-20"
 

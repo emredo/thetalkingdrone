@@ -275,15 +275,12 @@
         let scaleX, scaleY;
 
         // Configure API URLs
-        const API_BASE = '/api/v1';
-        const ENV_STATE_URL = `${API_BASE}/environment/state`;
-        const RESTART_URL = '/restart-simulation';
         const CREATE_DRONE_URL = '/create-default-drone';
 
         // Fetch environment data
         async function fetchData() {
             try {
-                const response = await fetch(ENV_STATE_URL);
+                const response = await fetch("/environment/state");
                 if (!response.ok) throw new Error('Failed to fetch environment data');
 
                 environmentData = await response.json();
@@ -317,7 +314,7 @@
         // Fetch detailed drone information
         async function fetchDroneDetails(droneId) {
             try {
-                const response = await fetch(`${API_BASE}/drone/${droneId}/details`);
+                const response = await fetch(`/drone/${droneId}/details`);
                 if (!response.ok) throw new Error('Failed to fetch drone details');
 
                 droneDetailData = await response.json();
@@ -381,7 +378,7 @@
         // Restart the simulation
         async function restartSimulation() {
             try {
-                const response = await fetch(RESTART_URL, {
+                const response = await fetch("/environment/restart-simulation", {
                     method: 'POST'
                 });
 
@@ -403,7 +400,7 @@
         // Create a default drone
         async function createDefaultDrone() {
             try {
-                const response = await fetch(CREATE_DRONE_URL, {
+                const response = await fetch("/environment/create-default-drone", {
                     method: 'POST'
                 });
 
@@ -428,7 +425,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/takeoff`, {
+                const response = await fetch(`/drone/${selectedDroneId}/takeoff`, {
                     method: 'POST'
                 });
 
@@ -449,7 +446,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/land`, {
+                const response = await fetch(`/drone/${selectedDroneId}/land`, {
                     method: 'POST'
                 });
 
@@ -479,7 +476,7 @@
                     return;
                 }
 
-                const response = await fetch(`${API_BASE}/drone/${selectedDroneId}/move`, {
+                const response = await fetch(`/drone/${selectedDroneId}/move`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -672,7 +669,7 @@
                 return;
             }
 
-            fetch(`${API_BASE}/autopilot/${selectedDroneId}/initialize`, {
+            fetch(`/autopilot/${selectedDroneId}/initialize`, {
                 method: 'POST'
             })
                 .then(response => {
@@ -711,7 +708,7 @@
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = '<div style="text-align: center;">Processing command...</div>';
 
-            fetch(`${API_BASE}/autopilot/${selectedDroneId}/command`, {
+            fetch(`/autopilot/${selectedDroneId}/command`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -753,7 +750,7 @@
             document.getElementById('commandResult').style.display = 'none';
 
             // Check if the selected drone already has an autopilot
-            fetch(`${API_BASE}/autopilot/list`)
+            fetch(`/autopilot/list`)
                 .then(response => response.json())
                 .then(data => {
                     if (data[droneId]) {
