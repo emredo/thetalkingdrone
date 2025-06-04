@@ -1,5 +1,5 @@
 from .drone import DroneModel, DroneState
-from .environment import Location, Obstacle
+from .environment import Location, Obstacle, EnvironmentState
 from .exceptions import (
     DroneException,
     DroneNotOperationalException,
@@ -11,7 +11,6 @@ from .exceptions import (
     ObstacleCollisionException,
     OutOfBoundsException,
 )
-from .intersection_models import DroneData, EnvironmentState
 from .response import DroneDetails
 
 
@@ -20,13 +19,12 @@ __all__ = [
     "DroneState",
     "Location",
     "Obstacle",
+    "EnvironmentState",
     "DroneException",
     "DroneNotOperationalException",
     "InsufficientFuelException",
     "InvalidDroneCommandException",
     "InvalidCommandException",
-    "DroneData",
-    "EnvironmentState",
     "DroneDetails",
     "AgentNotInitializedException",
     "AutopilotException",

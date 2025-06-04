@@ -5,7 +5,7 @@ Simulation monitor module to track and log simulation time periodically.
 import threading
 from typing import Optional
 
-from src.environment.service import EnvironmentService
+from src.services.environment import EnvironmentService
 from src.utils.logger import logger
 
 

@@ -2,7 +2,7 @@ from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.drone.service import DroneService
+from src.services.drone import DroneService
 from src.controller.environment import get_environment_instance
 from src.models import (
     DroneException,

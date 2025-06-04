@@ -6,8 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
-from src.config.settings import Settings
-from src.drone.service import DroneService
+from src.services.drone import DroneService
 from src.models import (
     AgentNotInitializedException,
     InvalidCommandException,
@@ -32,6 +31,8 @@ class AutoPilotAgent:
         """Setup the LangGraph agent with Gemini 2.5 Pro and tools for drone control."""
 
         # Initialize the LLM
+        from src.config.settings import Settings
+
         self.llm = init_chat_model(
             model=Settings.langchain_model,
             max_tokens=1000,

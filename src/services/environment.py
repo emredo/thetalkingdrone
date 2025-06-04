@@ -1,12 +1,15 @@
 import threading
 import time
 
-from src.config.settings import Settings
 from src.utils.logger import logger
 
-from src.models.intersection_models import EnvironmentState
-from src.models.environment import Obstacle, Location
-from src.models.exceptions import ObstacleCollisionException, OutOfBoundsException
+from src.models import (
+    EnvironmentState,
+    Obstacle,
+    Location,
+    ObstacleCollisionException,
+    OutOfBoundsException,
+)
 
 
 class EnvironmentService:
@@ -15,6 +18,8 @@ class EnvironmentService:
     def __init__(self):
         """Initialize environment with boundaries."""
         logger.info("Initializing environment service")
+        from src.config.settings import Settings
+
         self.state = EnvironmentState(
             boundaries=Settings.boundaries,
             obstacles=Settings.environment_obstacles,
@@ -133,6 +138,8 @@ class EnvironmentService:
         self._last_update_time = time.time()
 
         # Reset environment state (keeping the same boundaries)
+        from src.config.settings import Settings
+
         self.state = EnvironmentState(
             boundaries=Settings.boundaries, obstacles=Settings.environment_obstacles
         )
