@@ -1,14 +1,13 @@
-from abc import ABC, abstractmethod
 import threading
 import time
-from typing import Any, Dict, List
+from abc import ABC, abstractmethod
+from typing import Any, Dict
 
 from src.constant.constants import THREAD_UPDATE_INTERVAL
 from src.models.physical_models import (
     DroneData,
     DroneModel,
     Location,
-    Obstacle,
 )
 from src.utils.logger import logger
 
@@ -102,9 +101,4 @@ class DroneServiceBase(ABC):
     @abstractmethod
     def get_telemetry(self) -> Dict[str, Any]:
         """Get current drone telemetry data."""
-        pass
-
-    @abstractmethod
-    def get_obstacles(self) -> List[Obstacle]:
-        """Get the list of obstacles in the environment."""
         pass

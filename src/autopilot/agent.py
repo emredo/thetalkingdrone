@@ -11,7 +11,7 @@ from src.models import (
     AgentNotInitializedException,
     InvalidCommandException,
 )
-from src.models.physical_models import Location, Obstacle
+from src.models.physical_models import BuildingInformation, Location
 from src.services.simulation_drone import SimulationDroneService
 
 
@@ -116,13 +116,13 @@ Use the tools to respond to user queries about the drone or to control the drone
                 return f"Move failed: {str(e)}"
 
         @tool("get_buildings")
-        def get_buildings() -> List[Obstacle]:
+        def get_buildings() -> List[BuildingInformation]:
             """Get the list of buildings in the environment."""
             try:
-                buildings = []
-                for obstacle in self.drone_service.get_obstacles():
-                    buildings.append(obstacle)
-                return buildings
+                from src.controller.environment import get_environment_instance
+
+                environment = get_environment_instance()
+                return environment.features.buildings if environment else []
             except Exception as e:
                 raise RuntimeError(f"Failed to get buildings: {str(e)}")
 

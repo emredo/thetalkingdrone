@@ -6,7 +6,6 @@ from src.controller.environment import get_environment_instance
 from src.models import (
     DroneDetails,
     DroneException,
-    ObstacleCollisionException,
     OutOfBoundsException,
 )
 from src.models.physical_models import Location
@@ -64,7 +63,7 @@ def take_off(
             "status": "success",
             "message": "Taking off to altitude 1 meter",
         }
-    except (DroneException, OutOfBoundsException, ObstacleCollisionException) as e:
+    except (DroneException, OutOfBoundsException) as e:
         logger.error(
             f"Takeoff failed for drone {drone_service.drone.drone_id}: {str(e)}"
         )
@@ -79,7 +78,7 @@ def land(
     try:
         drone_service.land()
         return {"status": "success", "message": "Landing initiated"}
-    except (DroneException, OutOfBoundsException, ObstacleCollisionException) as e:
+    except (DroneException, OutOfBoundsException) as e:
         logger.error(
             f"Landing failed for drone {drone_service.drone.drone_id}: {str(e)}"
         )
@@ -97,7 +96,7 @@ def move_to(
             "status": "success",
             "message": f"Moving to location ({target.x}, {target.y}, {target.z})",
         }
-    except (DroneException, OutOfBoundsException, ObstacleCollisionException) as e:
+    except (DroneException, OutOfBoundsException) as e:
         logger.error(
             f"Move operation failed for drone {drone_service.drone.drone_id} to location ({target.x}, {target.y}, {target.z}): {str(e)}"
         )

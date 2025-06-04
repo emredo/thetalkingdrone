@@ -1,21 +1,19 @@
 import math
 import threading
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from src.models.exceptions import (
     DroneException,
     DroneNotOperationalException,
     InsufficientFuelException,
     InvalidDroneCommandException,
-    ObstacleCollisionException,
     OutOfBoundsException,
 )
 from src.models.physical_models import (
     DroneData,
     DroneState,
     Location,
-    Obstacle,
 )
 from src.services.drone_base import DroneServiceBase
 from src.utils.logger import logger
@@ -181,7 +179,7 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.state = DroneState.FLYING
             self.drone.speed = 0.0
 
-        except (OutOfBoundsException, ObstacleCollisionException) as e:
+        except OutOfBoundsException as e:
             self.drone.state = DroneState.EMERGENCY
             raise DroneException(f"Take off failed: {str(e)}")
         except Exception as e:
@@ -274,7 +272,7 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.state = DroneState.IDLE
             self.drone.speed = 0.0
 
-        except (OutOfBoundsException, ObstacleCollisionException) as e:
+        except OutOfBoundsException as e:
             self.drone.state = DroneState.EMERGENCY
             raise DroneException(f"Landing failed: {str(e)}")
         except Exception as e:
@@ -375,7 +373,3 @@ class SimulationDroneService(DroneServiceBase):
         telemetry.update(self.drone.telemetry)
 
         return telemetry
-
-    def get_obstacles(self) -> List[Obstacle]:
-        """Get the list of obstacles in the environment."""
-        return self.environment.features.obstacles

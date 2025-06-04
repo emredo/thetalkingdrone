@@ -53,10 +53,9 @@ def get_environment_state(
                     "y": obstacle.location.y,
                     "z": obstacle.location.z,
                 },
-                "dimensions": obstacle.dimensions,
                 "name": obstacle.name or f"Obstacle-{i}",
             }
-            for i, obstacle in enumerate(environment.features.obstacles)
+            for i, obstacle in enumerate(environment.features.buildings)
         ],
     }
 

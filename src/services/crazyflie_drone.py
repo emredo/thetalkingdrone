@@ -1,7 +1,7 @@
 import threading
 import time
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
@@ -10,7 +10,6 @@ from cflib.positioning.motion_commander import MotionCommander
 
 from src.models.physical_models import (
     DroneData,
-    Obstacle,
 )  # Assuming Obstacle might be needed
 from src.services.drone_base import (  # Assuming Location is also needed
     DroneServiceBase,
@@ -257,14 +256,3 @@ class CrazyFlieService(DroneServiceBase):
         self._telemetry_data["timestamp"] = time.time()
 
         return self._telemetry_data
-
-    def get_obstacles(self) -> List[Obstacle]:
-        """Get the list of obstacles in the environment."""
-        # For a real Crazyflie, obstacle detection is complex and usually via external sensors or systems.
-        # If integrated with a simulated environment, this could query that.
-        logger.info(
-            "get_obstacles called. For a physical Crazyflie, this would require external sensors/systems."
-        )
-        if self.environment and hasattr(self.environment, "get_obstacles"):
-            return self.environment.get_obstacles()
-        return []  # Return empty list by default

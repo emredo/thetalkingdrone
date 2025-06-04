@@ -47,14 +47,11 @@ class Location(BaseModel):
     z: float = Field(default=0.0, description="Z coordinate (altitude)")
 
 
-class Obstacle(BaseModel):
-    """Obstacle model representing buildings, etc."""
+class BuildingInformation(BaseModel):
+    """Building information model representing buildings, etc."""
 
     location: Location
-    dimensions: Tuple[float, float, float] = Field(
-        description="Width, length, height of the obstacle"
-    )
-    name: Optional[str] = Field(default=None, description="Identifier for the obstacle")
+    name: Optional[str] = Field(default=None, description="Identifier for the building")
 
 
 class EnvironmentFeatures(BaseModel):
@@ -63,8 +60,8 @@ class EnvironmentFeatures(BaseModel):
     boundaries: Tuple[float, float, float] = Field(
         description="Maximum (x, y, z) coordinates defining the environment boundaries"
     )
-    obstacles: List[Obstacle] = Field(
-        default_factory=list, description="List of obstacles in the environment"
+    buildings: List[BuildingInformation] = Field(
+        default_factory=list, description="List of buildings in the environment"
     )
 
 

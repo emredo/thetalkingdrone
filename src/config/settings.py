@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from src.models.physical_models import Location, Obstacle
+from src.models.physical_models import BuildingInformation, Location
 
 
 class Settings:
@@ -13,20 +13,17 @@ class Settings:
     # Environment settings
     boundaries: Tuple[float, float, float] = (1.5, 1.5, 1.5)
     # Environment obstacles
-    environment_obstacles: List[Obstacle] = [
-        Obstacle(
+    environment_obstacles: List[BuildingInformation] = [
+        BuildingInformation(
             location=Location(x=0.70, y=0.50, z=0.0),
-            dimensions=(0.10, 0.10, 0.20),
             name="İTÜ Ayazağa",
         ),
-        Obstacle(
+        BuildingInformation(
             location=Location(x=0.25, y=0.70, z=0.0),
-            dimensions=(0.10, 0.10, 0.20),
             name="Taksim İlk Yardım",
         ),
-        Obstacle(
+        BuildingInformation(
             location=Location(x=0.30, y=0.10, z=0.0),
-            dimensions=(0.10, 0.10, 0.20),
             name="Gümüşsuyu",
         ),
     ]

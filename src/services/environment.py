@@ -3,10 +3,13 @@ import time
 from typing import Dict
 
 from src.models import (
-    ObstacleCollisionException,
     OutOfBoundsException,
 )
-from src.models.physical_models import EnvironmentFeatures, Location, Obstacle
+from src.models.physical_models import (
+    BuildingInformation,
+    EnvironmentFeatures,
+    Location,
+)
 from src.services.drone_base import DroneServiceBase
 from src.utils.logger import logger
 
@@ -21,7 +24,7 @@ class EnvironmentService:
 
         self.features = EnvironmentFeatures(
             boundaries=Settings.boundaries,
-            obstacles=Settings.environment_obstacles,
+            buildings=Settings.environment_obstacles,
         )
         self.drones: Dict[str, DroneServiceBase] = {}
         self.time = 0.0
@@ -35,29 +38,9 @@ class EnvironmentService:
         # Start the simulation thread
         self.start_simulation()
 
-    def add_obstacle(self, obstacle: Obstacle) -> None:
+    def add_obstacle(self, obstacle: BuildingInformation) -> None:
         """Add an obstacle to the environment."""
-        self.features.obstacles.append(obstacle)
-
-    def check_collision(self, location: Location) -> bool:
-        """Check if location collides with any obstacle."""
-        for obstacle in self.features.obstacles:
-            obs_loc = obstacle.location
-            dimensions = obstacle.dimensions
-
-            # Simple collision check using axis-aligned bounding boxes
-            if (
-                obs_loc.x - dimensions[0] / 2
-                <= location.x
-                <= obs_loc.x + dimensions[0] / 2
-                and obs_loc.y - dimensions[1] / 2
-                <= location.y
-                <= obs_loc.y + dimensions[1] / 2
-                and obs_loc.z <= location.z <= obs_loc.z + dimensions[2]
-            ):
-                return True
-
-        return False
+        self.features.buildings.append(obstacle)
 
     def validate_location(self, location: Location) -> None:
         """Validate if a location is within bounds and not colliding with obstacles."""
@@ -72,12 +55,6 @@ class EnvironmentService:
         ):
             raise OutOfBoundsException(
                 f"Location {location} is outside environment boundaries"
-            )
-
-        # Check for collisions with obstacles
-        if self.check_collision(location):
-            raise ObstacleCollisionException(
-                f"Location {location} collides with an obstacle"
             )
 
     def update_time(self, time_delta: float) -> None:
@@ -142,7 +119,7 @@ class EnvironmentService:
         from src.config.settings import Settings
 
         self.features = EnvironmentFeatures(
-            boundaries=Settings.boundaries, obstacles=Settings.environment_obstacles
+            boundaries=Settings.boundaries, buildings=Settings.environment_obstacles
         )
 
         # Restart the simulation thread
