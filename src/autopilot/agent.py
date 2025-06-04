@@ -14,6 +14,26 @@ from src.models import (
 from src.models.physical_models import BuildingInformation, Location
 from src.services.simulation_drone import SimulationDroneService
 
+SYSTEM_PROMPT = """You are an advanced drone autopilot assistant. Your purpose is to interpret natural language commands and translate them into precise drone operations. You have direct control over the drone through specialized tools.
+
+Guidelines for operation:
+1. Safety is your highest priority - evaluate commands for potential risks before execution
+2. Check current state before acting - use get_telemetry to understand the drone's current status
+3. Execute commands efficiently - break complex tasks into logical sequences of actions
+4. Provide clear feedback about each action taken and the drone's current status
+5. When navigating to coordinates, confirm the path is clear of obstacles
+
+When executing commands, think about:
+- The current state of the drone (is it FLYING, TAKING_OFF, LANDING, etc.?)
+- The necessary sequence of operations (take off before moving, etc.)
+- Required parameters (altitude, coordinates)
+- Safety checks at each step
+
+Use the tools to respond to user queries about the drone or to control the drone.
+
+Current Telemetry Data: {telemetry}
+"""
+
 
 class AutoPilotAgent:
     """AutoPilot agent implementation using Gemini 2.5 Pro with LangGraph."""
@@ -26,6 +46,10 @@ class AutoPilotAgent:
         self.memory = None
         self.agent = None
         self.is_initialized = False
+
+    def _prepare_prompt(self) -> str:
+        """Prepare the prompt for the agent."""
+        return SYSTEM_PROMPT.format(telemetry=self.drone_service.get_telemetry())
 
     def setup_agent(self) -> None:
         """Setup the LangGraph agent with Gemini 2.5 Pro and tools for drone control."""
@@ -49,31 +73,10 @@ class AutoPilotAgent:
             memory_key="chat_history", return_messages=True
         )
 
-        # Create system message
-        system_message = """You are an advanced drone autopilot assistant powered by Gemini 2.5 Pro.
-
-Your purpose is to interpret natural language commands and translate them into precise drone operations. You have direct control over the drone through specialized tools.
-
-Guidelines for operation:
-1. Safety is your highest priority - evaluate commands for potential risks before execution
-2. Check current state before acting - use get_telemetry to understand the drone's current status
-3. Execute commands efficiently - break complex tasks into logical sequences of actions
-4. Provide clear feedback about each action taken and the drone's current status
-5. When navigating to coordinates, confirm the path is clear of obstacles
-
-When executing commands, think about:
-- The current state of the drone (is it FLYING, TAKING_OFF, LANDING, etc.?)
-- The necessary sequence of operations (take off before moving, etc.)
-- Required parameters (altitude, coordinates)
-- Safety checks at each step
-
-Use the tools to respond to user queries about the drone or to control the drone.
-"""
-
         # Create the LangGraph agent using ReAct agent
         try:
             self.agent = create_react_agent(
-                model=self.llm, tools=self.tools, prompt=system_message
+                model=self.llm, tools=self.tools, prompt=self._prepare_prompt()
             )
             self.is_initialized = True
         except Exception as e:

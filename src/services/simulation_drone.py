@@ -363,13 +363,10 @@ class SimulationDroneService(DroneServiceBase):
             if self.drone.fuel_level <= 0 or self.drone.state != DroneState.FLYING:
                 break
 
-            # Calculate new position
-            new_x = self.drone.telemetry.position.x + dx
-            new_y = self.drone.telemetry.position.y + dy
-            new_z = self.drone.telemetry.position.z + dz
-
             # Update drone location
-            self.drone.telemetry = Location(x=new_x, y=new_y, z=new_z)
+            self.drone.telemetry.position.x = self.drone.telemetry.position.x + dx
+            self.drone.telemetry.position.y = self.drone.telemetry.position.y + dy
+            self.drone.telemetry.position.z = self.drone.telemetry.position.z + dz
 
             # Consume fuel for this step
             step_fuel_consumption = (
@@ -381,7 +378,7 @@ class SimulationDroneService(DroneServiceBase):
             time.sleep(update_interval)
 
         # Ensure we reach exactly the target location
-        self.drone.telemetry = target_location
+        self.drone.telemetry.position = target_location
 
         # Reset speed after reaching destination
         self.drone.telemetry.speed = 0.0

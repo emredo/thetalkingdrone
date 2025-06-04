@@ -454,7 +454,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`/drone/${selectedDroneId}/takeoff`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/takeoff`, {
                     method: 'POST'
                 });
 
@@ -475,7 +475,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`/drone/${selectedDroneId}/land`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/land`, {
                     method: 'POST'
                 });
 
@@ -505,7 +505,7 @@
                     return;
                 }
 
-                const response = await fetch(`/drone/${selectedDroneId}/move`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/move`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -709,6 +709,7 @@
                     console.log("Autopilot initialized:", data);
                     selectedDroneHasAutopilot = true;
                     document.getElementById('sendCommandBtn').disabled = false;
+                    document.getElementById('initAutopilotBtn').style.backgroundColor = '#007bff';
                     document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
                     document.getElementById('initAutopilotBtn').disabled = true;
                 })
@@ -790,21 +791,6 @@
             document.getElementById('initAutopilotBtn').disabled = false;
             document.getElementById('initAutopilotBtn').textContent = 'Initialize Autopilot';
             document.getElementById('commandResult').style.display = 'none';
-
-            // Check if the selected drone already has an autopilot
-            fetch(`/autopilot/list`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data[droneId]) {
-                        selectedDroneHasAutopilot = true;
-                        document.getElementById('sendCommandBtn').disabled = false;
-                        document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
-                        document.getElementById('initAutopilotBtn').disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error("Error checking autopilot status:", error);
-                });
         }
 
         // Open drone creator form with specified drone type

@@ -43,14 +43,6 @@ Content-Type: application/json
 
 The LLM will interpret the command and execute the appropriate drone actions.
 
-#### List Autopilot Agents
-
-```http
-GET /api/autopilot/list
-```
-
-Returns a list of all drones with autopilot agents and their initialization status.
-
 ## Example Commands
 
 - "Take off to 30 meters"

@@ -5,7 +5,13 @@ from pydantic import BaseModel
 
 from src.autopilot.agent import AutoPilotAgent
 from src.controller.drone import get_drone_service
-from src.models import AgentNotInitializedException, AutopilotException
+from src.models import (
+    AgentNotInitializedException,
+    AutopilotException,
+    DroneException,
+    OutOfBoundsException,
+)
+from src.models.physical_models import Location
 from src.services.simulation_drone import SimulationDroneService
 from src.utils.logger import logger
 
@@ -93,9 +99,52 @@ def execute_command(
         )
 
 
-@router.get("/list")
-def list_autopilot_agents() -> Dict[str, bool]:
-    """List all drones with autopilot agents and their initialization status."""
-    return {
-        drone_id: agent.is_initialized for drone_id, agent in _autopilot_agents.items()
-    }
+@router.post("/{drone_id}/takeoff")
+def take_off(
+    drone_service: SimulationDroneService = Depends(get_drone_service),
+) -> Dict[str, str]:
+    """Command drone to take off to the specified altitude."""
+    try:
+        drone_service.take_off()
+        return {
+            "status": "success",
+            "message": "Taking off to altitude 1 meter",
+        }
+    except (DroneException, OutOfBoundsException) as e:
+        logger.error(
+            f"Takeoff failed for drone {drone_service.drone.drone_id}: {str(e)}"
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{drone_id}/land")
+def land(
+    drone_service: SimulationDroneService = Depends(get_drone_service),
+) -> Dict[str, str]:
+    """Command drone to land."""
+    try:
+        drone_service.land()
+        return {"status": "success", "message": "Landing initiated"}
+    except (DroneException, OutOfBoundsException) as e:
+        logger.error(
+            f"Landing failed for drone {drone_service.drone.drone_id}: {str(e)}"
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{drone_id}/move")
+def move_to(
+    target: Location, drone_service: SimulationDroneService = Depends(get_drone_service)
+) -> Dict[str, str]:
+    """Command drone to move to the specified location."""
+    try:
+        drone_service.move_to(target)
+        return {
+            "status": "success",
+            "message": f"Moving to location ({target.x}, {target.y}, {target.z})",
+        }
+    except (DroneException, OutOfBoundsException) as e:
+        logger.error(
+            f"Move operation failed for drone {drone_service.drone.drone_id} to location ({target.x}, {target.y}, {target.z}): {str(e)}"
+        )
+        raise HTTPException(status_code=400, detail=str(e))
