@@ -3,6 +3,7 @@ fastapi
 uvicorn
 typer
 pydantic
+numpy>=1.26,<3.0
 
 # Development tools
 ruff
@@ -10,6 +11,7 @@ pytest
 black
 pip-tools 
 
+cflib==0.1.17
 langchain_core
 langchain_community
 langgraph
