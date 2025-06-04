@@ -2,6 +2,7 @@ import uuid
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from src.models.physical_models import DroneModel, Location
 from src.services.crazyflie_drone import CrazyFlieService
@@ -9,6 +10,14 @@ from src.services.environment import EnvironmentService
 from src.services.simulation_drone import SimulationDroneService
 
 router = APIRouter(prefix="/environment", tags=["environment"])
+
+
+class CreateDroneRequest(BaseModel):
+    """Request model for creating a drone."""
+
+    name: str
+    location: Location
+
 
 # Reference to the environment instance
 _environment_instance = None
@@ -93,10 +102,9 @@ def restart_simulation():
 
 
 # Add example endpoint to create a default drone
-@router.post("/create-default-simulation-drone", response_model=str)
+@router.post("/create-simulation-drone", response_model=str)
 def create_default_simulation_drone(
-    name: str,
-    location: Location,
+    request: CreateDroneRequest,
 ):
     """Create a default drone for testing."""
     try:
@@ -104,7 +112,7 @@ def create_default_simulation_drone(
         from src.config.settings import Settings
 
         model = DroneModel(
-            name=name,
+            name=request.name,
             max_speed=Settings.default_drone_max_speed,
             max_altitude=Settings.default_drone_max_altitude,
             weight=Settings.default_drone_weight,
@@ -114,12 +122,11 @@ def create_default_simulation_drone(
         )
 
         # Create drone at a safe starting position
-
         environment = get_environment_instance()
         # Create drone service
         drone_id = str(uuid.uuid4())
         drone_service: SimulationDroneService = SimulationDroneService.create_drone(
-            model=model, location=location, drone_id=drone_id
+            model=model, location=request.location, drone_id=drone_id
         )
 
         environment.drones[drone_service.drone.drone_id] = drone_service
@@ -132,16 +139,15 @@ def create_default_simulation_drone(
 
 @router.post("/create-crazyflie-drone", response_model=str)
 def create_crazyflie_drone(
-    name: str,
-    location: Location,
+    request: CreateDroneRequest,
 ):
-    """Create a default drone for testing."""
+    """Create a CrazyFlie drone for testing."""
     from src.config.settings import Settings
 
     try:
         environment = get_environment_instance()
         model = DroneModel(
-            name=name,
+            name=request.name,
             max_speed=Settings.default_drone_max_speed,
             max_altitude=Settings.default_drone_max_altitude,
             weight=Settings.default_drone_weight,
@@ -151,7 +157,7 @@ def create_crazyflie_drone(
         )
         drone_id = str(uuid.uuid4())
         drone_service: CrazyFlieService = CrazyFlieService.create_drone(
-            model=model, location=location, drone_id=drone_id
+            model=model, location=request.location, drone_id=drone_id
         )
 
         environment.drones[drone_service.drone.drone_id] = drone_service

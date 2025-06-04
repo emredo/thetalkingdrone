@@ -138,6 +138,45 @@
         .badge-emergency {
             background-color: red;
         }
+
+        .drone-creator {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .drone-creator h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .form-row label {
+            flex: 0 0 100px;
+            font-weight: bold;
+        }
+
+        .form-row input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .form-row button {
+            margin-right: 10px;
+        }
     </style>
 </head>
 
@@ -147,8 +186,34 @@
     <div class="controls">
         <button onclick="fetchData()">Refresh</button>
         <button onclick="restartSimulation()">Restart Simulation</button>
-        <button onclick="createDefaultSimulationDrone()">Add Default Drone</button>
+        <button onclick="openDroneCreator('simulation')">Create Simulation Drone</button>
+        <button onclick="openDroneCreator('crazyflie')">Create CrazyFlie Drone</button>
         <span id="simTime">Simulation Time: 0.00s</span>
+    </div>
+
+    <!-- Add drone creation form -->
+    <div id="droneCreator" class="drone-creator" style="display: none;">
+        <h3 id="droneCreatorTitle">Create New Drone</h3>
+        <div class="form-row">
+            <label for="droneName">Name:</label>
+            <input type="text" id="droneName" placeholder="Enter drone name" value="MyDrone">
+        </div>
+        <div class="form-row">
+            <label for="droneX">X Position:</label>
+            <input type="number" id="droneX" placeholder="X coordinate" step="0.1" value="2.0">
+        </div>
+        <div class="form-row">
+            <label for="droneY">Y Position:</label>
+            <input type="number" id="droneY" placeholder="Y coordinate" step="0.1" value="2.0">
+        </div>
+        <div class="form-row">
+            <label for="droneZ">Z Position:</label>
+            <input type="number" id="droneZ" placeholder="Z coordinate" step="0.1" value="0.0">
+        </div>
+        <div class="form-row">
+            <button onclick="createSelectedDrone()">Create</button>
+            <button onclick="closeDroneCreator()">Cancel</button>
+        </div>
     </div>
 
     <div class="layout">
@@ -270,12 +335,10 @@
         let environmentData = null;
         let selectedDroneId = null;
         let droneDetailData = null;
+        let selectedDroneType = null; // Track which drone type to create
 
         // Scale factors
         let scaleX, scaleY;
-
-        // Configure API URLs
-        const CREATE_DRONE_URL = '/create-default-drone';
 
         // Fetch environment data
         async function fetchData() {
@@ -400,7 +463,7 @@
         // Create a default drone
         async function createDefaultSimulationDrone() {
             try {
-                const response = await fetch("/environment/create-default-simulation-drone", {
+                const response = await fetch("/environment/create-simulation-drone", {
                     method: 'POST'
                 });
 
@@ -763,6 +826,96 @@
                 .catch(error => {
                     console.error("Error checking autopilot status:", error);
                 });
+        }
+
+        // Open drone creator form with specified drone type
+        function openDroneCreator(droneType) {
+            selectedDroneType = droneType;
+            const creatorDiv = document.getElementById('droneCreator');
+            const titleElement = document.getElementById('droneCreatorTitle');
+
+            // Update the title based on drone type
+            if (droneType === 'simulation') {
+                titleElement.textContent = 'Create Simulation Drone';
+            } else {
+                titleElement.textContent = 'Create CrazyFlie Drone';
+            }
+
+            creatorDiv.style.display = 'block';
+        }
+
+        // Close drone creator form
+        function closeDroneCreator() {
+            document.getElementById('droneCreator').style.display = 'none';
+            selectedDroneType = null;
+        }
+
+        // Create drone using the selected drone type
+        function createSelectedDrone() {
+            if (!selectedDroneType) {
+                alert('No drone type selected');
+                return;
+            }
+            createDrone(selectedDroneType);
+        }
+
+        // Create drone with name and location (unified function)
+        async function createDrone(droneType) {
+            try {
+                const name = document.getElementById('droneName').value.trim();
+                const x = parseFloat(document.getElementById('droneX').value);
+                const y = parseFloat(document.getElementById('droneY').value);
+                const z = parseFloat(document.getElementById('droneZ').value);
+
+                if (!name) {
+                    alert('Please enter a drone name');
+                    return;
+                }
+
+                if (isNaN(x) || isNaN(y) || isNaN(z)) {
+                    alert('Please enter valid coordinates');
+                    return;
+                }
+
+                // Determine the endpoint based on drone type
+                const endpoint = droneType === 'simulation'
+                    ? "/environment/create-simulation-drone"
+                    : "/environment/create-crazyflie-drone";
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        location: {
+                            x: x,
+                            y: y,
+                            z: z
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to create drone');
+                }
+
+                const droneId = await response.text();
+                console.log(`Created ${droneType} drone with ID: ${droneId}`);
+
+                // Select the newly created drone
+                selectedDroneId = droneId.replace(/"/g, ''); // Remove quotes from response
+                fetchDroneDetails(selectedDroneId);
+
+                // Hide the creator form and refresh the data
+                closeDroneCreator();
+                fetchData();
+            } catch (error) {
+                console.error(`Error creating ${droneType} drone:`, error);
+                alert(`Error creating drone: ${error.message}`);
+            }
         }
     </script>
 </body>
