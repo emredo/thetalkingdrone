@@ -172,6 +172,7 @@ def serve(
         port=port,
         reload=reload,
         factory=True,
+        access_log=False,  # Disable uvicorn access logging to prevent /environment/state noise
     )
 
 

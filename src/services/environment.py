@@ -8,7 +8,7 @@ from src.models import (
 from src.models.physical_models import (
     BuildingInformation,
     EnvironmentFeatures,
-    Location,
+    Telemetry,
 )
 from src.services.drone_base import DroneServiceBase
 from src.utils.logger import logger
@@ -42,19 +42,19 @@ class EnvironmentService:
         """Add an obstacle to the environment."""
         self.features.buildings.append(obstacle)
 
-    def validate_location(self, location: Location) -> None:
+    def validate_location(self, telemetry: Telemetry) -> None:
         """Validate if a location is within bounds and not colliding with obstacles."""
         # Check if location is within environment boundaries
         if (
-            location.x < 0
-            or location.x > self.features.boundaries[0]
-            or location.y < 0
-            or location.y > self.features.boundaries[1]
-            or location.z < 0
-            or location.z > self.features.boundaries[2]
+            telemetry.position.x < 0
+            or telemetry.position.x > self.features.boundaries[0]
+            or telemetry.position.y < 0
+            or telemetry.position.y > self.features.boundaries[1]
+            or telemetry.position.z < 0
+            or telemetry.position.z > self.features.boundaries[2]
         ):
             raise OutOfBoundsException(
-                f"Location {location} is outside environment boundaries"
+                f"Location {telemetry.position} is outside environment boundaries"
             )
 
     def update_time(self, time_delta: float) -> None:

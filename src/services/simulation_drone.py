@@ -155,9 +155,15 @@ class SimulationDroneService(DroneServiceBase):
                     z=new_z,
                 )
 
+                new_telemetry = Telemetry(
+                    position=new_location,
+                    speed=self.drone.telemetry.speed,
+                    heading=self.drone.telemetry.heading,
+                )
+
                 # Validate the new location
-                self.environment.validate_location(new_location)
-                self.drone.telemetry.position = new_location
+                self.environment.validate_location(new_telemetry)
+                self.drone.telemetry = new_telemetry
 
                 # Consume fuel for this step
                 step_fuel_consumption = (
@@ -176,8 +182,13 @@ class SimulationDroneService(DroneServiceBase):
                 y=self.drone.telemetry.position.y,
                 z=target_altitude,
             )
-            self.environment.validate_location(final_location)
-            self.drone.telemetry.position = final_location
+            final_telemetry = Telemetry(
+                position=final_location,
+                speed=self.drone.telemetry.speed,
+                heading=self.drone.telemetry.heading,
+            )
+            self.environment.validate_location(final_telemetry)
+            self.drone.telemetry = final_telemetry
 
             # Change state to flying and reset speed
             self.drone.state = DroneState.FLYING
@@ -249,9 +260,15 @@ class SimulationDroneService(DroneServiceBase):
                     z=new_z,
                 )
 
+                new_telemetry = Telemetry(
+                    position=new_location,
+                    speed=self.drone.telemetry.speed,
+                    heading=self.drone.telemetry.heading,
+                )
+
                 # Validate the new location
-                self.environment.validate_location(new_location)
-                self.drone.telemetry = new_location
+                self.environment.validate_location(new_telemetry)
+                self.drone.telemetry = new_telemetry
 
                 # Consume fuel for this step
                 if self.drone.fuel_level > 0:
@@ -273,8 +290,13 @@ class SimulationDroneService(DroneServiceBase):
                 y=self.drone.telemetry.position.y,
                 z=target_altitude,
             )
-            self.environment.validate_location(final_location)
-            self.drone.telemetry.position = final_location
+            final_telemetry = Telemetry(
+                position=final_location,
+                speed=self.drone.telemetry.speed,
+                heading=self.drone.telemetry.heading,
+            )
+            self.environment.validate_location(final_telemetry)
+            self.drone.telemetry = final_telemetry
 
             # Change state to idle and reset speed
             self.drone.state = DroneState.IDLE
@@ -294,8 +316,13 @@ class SimulationDroneService(DroneServiceBase):
                 f"Cannot move in {self.drone.state} state"
             )
 
+        target_telemetry = Telemetry(
+            position=target_location,
+            speed=self.drone.telemetry.speed,
+            heading=self.drone.telemetry.heading,
+        )
         # Check target location validity
-        self.environment.validate_location(target_location)
+        self.environment.validate_location(target_telemetry)
 
         # Calculate distance to move
         distance = math.sqrt(

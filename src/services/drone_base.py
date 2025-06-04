@@ -27,14 +27,14 @@ class DroneServiceBase(ABC):
     def create_drone(
         cls,
         model: DroneModel,
-        location: Location,
+        telemetry: Telemetry,
         drone_id: str,
     ) -> "DroneServiceBase":
         """Factory method to create a new drone service instance."""
         from src.controller.environment import get_environment_instance
 
         environment = get_environment_instance()
-        environment.validate_location(location)
+        environment.validate_location(telemetry)
 
         # Create drone service
         # Create drone data with full fuel
@@ -42,11 +42,7 @@ class DroneServiceBase(ABC):
             drone_id=drone_id,
             model=model,
             fuel_level=model.fuel_capacity,
-            telemetry=Telemetry(
-                position=location,
-                speed=0.0,
-                heading=0.0,
-            ),
+            telemetry=telemetry,
         )
 
         # Set environment and return drone service

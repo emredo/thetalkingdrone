@@ -184,7 +184,6 @@
     <h1>Drone Environment Visualization</h1>
 
     <div class="controls">
-        <button onclick="fetchData()">Refresh</button>
         <button onclick="restartSimulation()">Restart Simulation</button>
         <button onclick="openDroneCreator('simulation')">Create Simulation Drone</button>
         <button onclick="openDroneCreator('crazyflie')">Create CrazyFlie Drone</button>
@@ -363,38 +362,16 @@
                 document.getElementById('simTime').textContent =
                     `Simulation Time: ${environmentData.environment.time.toFixed(2)}s`;
 
-                // If a drone is selected, update its details
-                if (selectedDroneId) {
-                    const selectedDrone = Object.values(environmentData.drones).find(d => d.drone_id === selectedDroneId);
-                    if (selectedDrone) {
-                        fetchDroneDetails(selectedDroneId);
-                    } else {
-                        // Selected drone no longer exists
-                        clearSelectedDrone();
-                    }
+                // If a drone is selected, update its details from the new environment data
+                if (selectedDroneId && environmentData.drones && environmentData.drones[selectedDroneId]) {
+                    droneDetailData = environmentData.drones[selectedDroneId];
+                    updateDroneDetailsPanel();
+                } else if (selectedDroneId) {
+                    // Selected drone no longer exists
+                    clearSelectedDrone();
                 }
             } catch (error) {
                 console.error('Error fetching environment data:', error);
-            }
-        }
-
-        // Fetch detailed drone information
-        async function fetchDroneDetails(droneId) {
-            try {
-                console.log("Fetching details for drone:", droneId);
-                const response = await fetch(`/drone/${droneId}/details`);
-                if (!response.ok) throw new Error('Failed to fetch drone details');
-
-                droneDetailData = await response.json();
-                console.log("Received drone details:", droneDetailData);
-                updateDroneDetailsPanel();
-
-                // Show the details panel
-                console.log("Showing details panel");
-                document.getElementById('droneDetails').style.display = 'block';
-            } catch (error) {
-                console.error('Error fetching drone details:', error);
-                clearSelectedDrone();
             }
         }
 
@@ -779,7 +756,7 @@
                 `;
 
                     // Refresh drone data
-                    fetchDroneDetails(selectedDroneId);
+                    fetchData();
                 })
                 .catch(error => {
                     console.error("Error executing command:", error);
@@ -792,15 +769,27 @@
             console.log("Selecting drone:", droneId);
             selectedDroneId = droneId;
 
+            // Get drone data directly from environment state
+            if (environmentData && environmentData.drones && environmentData.drones[droneId]) {
+                droneDetailData = environmentData.drones[droneId];
+                console.log("Using drone data from environment state:", droneDetailData);
+                updateDroneDetailsPanel();
+
+                // Show the details panel
+                console.log("Showing details panel");
+                document.getElementById('droneDetails').style.display = 'block';
+            } else {
+                console.error("Drone not found in environment data:", droneId);
+                clearSelectedDrone();
+                return;
+            }
+
             // Reset autopilot state
             selectedDroneHasAutopilot = false;
             document.getElementById('sendCommandBtn').disabled = true;
             document.getElementById('initAutopilotBtn').disabled = false;
             document.getElementById('initAutopilotBtn').textContent = 'Initialize Autopilot';
             document.getElementById('commandResult').style.display = 'none';
-
-            // Fetch drone details and show panel
-            fetchDroneDetails(droneId);
 
             // Check if the selected drone already has an autopilot
             fetch(`/autopilot/list`)
@@ -897,7 +886,7 @@
 
                 // Select the newly created drone
                 selectedDroneId = droneId.replace(/"/g, ''); // Remove quotes from response
-                fetchDroneDetails(selectedDroneId);
+                fetchData();
 
                 // Hide the creator form and refresh the data
                 closeDroneCreator();
