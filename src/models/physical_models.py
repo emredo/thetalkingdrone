@@ -50,19 +50,15 @@ class Obstacle(BaseModel):
     name: Optional[str] = Field(default=None, description="Identifier for the obstacle")
 
 
-class EnvironmentState(BaseModel):
+class EnvironmentFeatures(BaseModel):
     """Model representing the state of the environment."""
 
-    drones: Optional[Dict[str, Any]] = Field(
-        default_factory=dict, description="Drones in the environment"
-    )
     boundaries: Tuple[float, float, float] = Field(
         description="Maximum (x, y, z) coordinates defining the environment boundaries"
     )
     obstacles: List[Obstacle] = Field(
         default_factory=list, description="List of obstacles in the environment"
     )
-    time: Optional[float] = Field(default=0.0, description="Current simulation time")
 
 
 class DroneData(BaseModel):

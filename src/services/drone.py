@@ -427,7 +427,7 @@ class DroneService:
 
     def get_obstacles(self) -> List[Obstacle]:
         """Get the list of obstacles in the environment."""
-        return self.environment.state.obstacles
+        return self.environment.features.obstacles
 
     def __del__(self):
         """Destructor to ensure thread is properly cleaned up."""

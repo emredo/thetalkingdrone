@@ -1,10 +1,3 @@
-from .physical_models import (
-    DroneModel,
-    DroneState,
-    EnvironmentState,
-    Location,
-    Obstacle,
-)
 from .exceptions import (
     AgentNotInitializedException,
     AutopilotException,
@@ -16,6 +9,13 @@ from .exceptions import (
     ObstacleCollisionException,
     OutOfBoundsException,
 )
+from .physical_models import (
+    DroneModel,
+    DroneState,
+    EnvironmentFeatures,
+    Location,
+    Obstacle,
+)
 from .response import DroneDetails
 
 __all__ = [
@@ -23,7 +23,7 @@ __all__ = [
     "DroneState",
     "Location",
     "Obstacle",
-    "EnvironmentState",
+    "EnvironmentFeatures",
     "DroneException",
     "DroneNotOperationalException",
     "InsufficientFuelException",

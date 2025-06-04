@@ -33,8 +33,8 @@ def get_environment_state(
     """Get the current state of the environment for visualization."""
     # Get environment state
     env_state = {
-        "boundaries": environment.state.boundaries,
-        "time": environment.state.time,
+        "boundaries": environment.features.boundaries,
+        "time": environment.time,
         "obstacles": [
             {
                 "position": {
@@ -45,7 +45,7 @@ def get_environment_state(
                 "dimensions": obstacle.dimensions,
                 "name": obstacle.name or f"Obstacle-{i}",
             }
-            for i, obstacle in enumerate(environment.state.obstacles)
+            for i, obstacle in enumerate(environment.features.obstacles)
         ],
     }
 
@@ -61,7 +61,7 @@ def get_environment_state(
             "state": drone_service.drone.state.value,
             "fuel_level": drone_service.drone.fuel_level,
         }
-        for drone_id, drone_service in environment.state.drones.items()
+        for drone_id, drone_service in environment.drones.items()
     ]
 
     return {"environment": env_state, "drones": drones}
@@ -78,7 +78,7 @@ def restart_simulation():
         environment.reset()
 
         # Clear all drone instances
-        environment.state.drones.clear()
+        environment.drones.clear()
 
         return {
             "status": "success",
@@ -116,7 +116,7 @@ def create_default_drone():
         # Create drone service
         drone_service = DroneService.create_drone(model=model, location=start_location)
 
-        environment.state.drones[drone_service.drone.drone_id] = drone_service
+        environment.drones[drone_service.drone.drone_id] = drone_service
 
         return drone_service.drone.drone_id
 

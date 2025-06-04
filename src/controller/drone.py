@@ -19,9 +19,9 @@ router = APIRouter(prefix="/drone", tags=["drone"])
 def get_drone_service(drone_id: str) -> DroneService:
     """Dependency to get drone service by ID."""
     environment = get_environment_instance()
-    if drone_id not in environment.state.drones:
+    if drone_id not in environment.drones:
         raise HTTPException(status_code=404, detail=f"Drone {drone_id} not found")
-    return environment.state.drones[drone_id]
+    return environment.drones[drone_id]
 
 
 @router.get("/{drone_id}/details", response_model=DroneDetails)

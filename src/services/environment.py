@@ -1,11 +1,13 @@
 import threading
 import time
+from typing import Dict
 
 from src.models import (
     ObstacleCollisionException,
     OutOfBoundsException,
 )
-from src.models.physical_models import EnvironmentState, Location, Obstacle
+from src.models.physical_models import EnvironmentFeatures, Location, Obstacle
+from src.services.drone import DroneService
 from src.utils.logger import logger
 
 
@@ -17,10 +19,12 @@ class EnvironmentService:
         logger.info("Initializing environment service")
         from src.config.settings import Settings
 
-        self.state = EnvironmentState(
+        self.features = EnvironmentFeatures(
             boundaries=Settings.boundaries,
             obstacles=Settings.environment_obstacles,
         )
+        self.drones: Dict[str, DroneService] = {}
+        self.time = 0.0
         self._last_update_time = time.time()
 
         # Threading setup
@@ -33,11 +37,11 @@ class EnvironmentService:
 
     def add_obstacle(self, obstacle: Obstacle) -> None:
         """Add an obstacle to the environment."""
-        self.state.obstacles.append(obstacle)
+        self.features.obstacles.append(obstacle)
 
     def check_collision(self, location: Location) -> bool:
         """Check if location collides with any obstacle."""
-        for obstacle in self.state.obstacles:
+        for obstacle in self.features.obstacles:
             obs_loc = obstacle.location
             dimensions = obstacle.dimensions
 
@@ -60,11 +64,11 @@ class EnvironmentService:
         # Check if location is within environment boundaries
         if (
             location.x < 0
-            or location.x > self.state.boundaries[0]
+            or location.x > self.features.boundaries[0]
             or location.y < 0
-            or location.y > self.state.boundaries[1]
+            or location.y > self.features.boundaries[1]
             or location.z < 0
-            or location.z > self.state.boundaries[2]
+            or location.z > self.features.boundaries[2]
         ):
             raise OutOfBoundsException(
                 f"Location {location} is outside environment boundaries"
@@ -78,7 +82,7 @@ class EnvironmentService:
 
     def update_time(self, time_delta: float) -> None:
         """Update the environment simulation time."""
-        self.state.time += time_delta
+        self.time += time_delta
 
     def update_simulation_time(self) -> None:
         """Update the simulation time based on real elapsed time."""
@@ -131,13 +135,13 @@ class EnvironmentService:
         self.stop_simulation()
 
         # Reset simulation time
-        self.state.time = 0.0
+        self.time = 0.0
         self._last_update_time = time.time()
 
         # Reset environment state (keeping the same boundaries)
         from src.config.settings import Settings
 
-        self.state = EnvironmentState(
+        self.features = EnvironmentFeatures(
             boundaries=Settings.boundaries, obstacles=Settings.environment_obstacles
         )
 
