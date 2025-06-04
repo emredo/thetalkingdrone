@@ -4,7 +4,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from src.models.physical_models import DroneModel, Location
+from src.models.physical_models import DroneModel, DroneType, Location
 from src.services.crazyflie_drone import CrazyFlieService
 from src.services.environment import EnvironmentService
 from src.services.simulation_drone import SimulationDroneService
@@ -53,9 +53,7 @@ def get_environment_state(
         drone_id: drone_service.drone.model_dump()
         for drone_id, drone_service in environment.drones.items()
     }
-    foo = {"environment": env_state, "drones": drones}
-    print(foo)
-    return foo
+    return {"environment": env_state, "drones": drones}
 
 
 @router.post("/restart-simulation")
@@ -89,6 +87,7 @@ def create_default_simulation_drone(
         # Create default drone model based on settings
         from src.config.settings import Settings
 
+        print(request.name)
         model = DroneModel(
             name=request.name,
             max_speed=Settings.default_drone_max_speed,
@@ -97,12 +96,13 @@ def create_default_simulation_drone(
             dimensions=Settings.default_drone_dimensions,
             fuel_capacity=Settings.default_drone_fuel_capacity,
             fuel_consumption_rate=Settings.default_drone_fuel_consumption_rate,
+            type=DroneType.SIMULATION,
         )
 
         # Create drone at a safe starting position
         environment = get_environment_instance()
         # Create drone service
-        drone_id = str(uuid.uuid4())
+        drone_id = str(uuid.uuid4())[:4]
         drone_service: SimulationDroneService = SimulationDroneService.create_drone(
             model=model, location=request.location, drone_id=drone_id
         )
@@ -132,6 +132,7 @@ def create_crazyflie_drone(
             dimensions=Settings.default_drone_dimensions,
             fuel_capacity=Settings.default_drone_fuel_capacity,
             fuel_consumption_rate=Settings.default_drone_fuel_consumption_rate,
+            type=DroneType.CRAZYFLIE,
         )
         drone_id = str(uuid.uuid4())
         drone_service: CrazyFlieService = CrazyFlieService.create_drone(

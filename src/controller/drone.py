@@ -4,11 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.controller.environment import get_environment_instance
 from src.models import (
-    DroneDetails,
     DroneException,
     OutOfBoundsException,
 )
-from src.models.physical_models import Location
+from src.models.physical_models import DroneData, Location
 from src.services.simulation_drone import SimulationDroneService
 from src.utils.logger import logger
 
@@ -23,31 +22,14 @@ def get_drone_service(drone_id: str) -> SimulationDroneService:
     return environment.drones[drone_id]
 
 
-@router.get("/{drone_id}/details", response_model=DroneDetails)
+@router.get("/{drone_id}/details", response_model=DroneData)
 def get_drone_details(
     drone_service: SimulationDroneService = Depends(get_drone_service),
-) -> DroneDetails:
+):
     """Get detailed information about a specific drone."""
     drone_service.update()  # Update drone state
 
-    drone = drone_service.drone
-    telemetry = drone_service.get_telemetry()
-
-    return DroneDetails(
-        id=drone.drone_id,
-        name=drone.model.name,
-        state=drone.state.value,
-        fuel_level=drone.fuel_level,
-        fuel_capacity=drone.model.fuel_capacity,
-        fuel_percentage=telemetry["fuel_percentage"],
-        speed=drone.speed,
-        max_speed=drone.model.max_speed,
-        max_altitude=drone.model.max_altitude,
-        weight=drone.model.weight,
-        dimensions=list(drone.model.dimensions),
-        current_payload=drone.payload,
-        telemetry=drone.telemetry,
-    )
+    return drone_service.drone
 
 
 @router.post("/{drone_id}/takeoff")

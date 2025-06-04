@@ -15,7 +15,6 @@ from .physical_models import (
     EnvironmentFeatures,
     Location,
 )
-from .response import DroneDetails
 
 __all__ = [
     "DroneModel",
@@ -28,7 +27,6 @@ __all__ = [
     "InsufficientFuelException",
     "InvalidDroneCommandException",
     "InvalidCommandException",
-    "DroneDetails",
     "AgentNotInitializedException",
     "AutopilotException",
     "OutOfBoundsException",

@@ -15,10 +15,18 @@ class DroneState(str, Enum):
     MAINTENANCE = "MAINTENANCE"
 
 
+class DroneType(str, Enum):
+    """Enum representing possible drone types."""
+
+    SIMULATION = "SIMULATION"
+    CRAZYFLIE = "CRAZYFLIE"
+
+
 class DroneModel(BaseModel):
     """Model containing static drone specifications."""
 
     name: str
+    type: DroneType = Field(description="Type of drone")
     max_speed: float = Field(description="Maximum speed in m/s")
     max_altitude: float = Field(description="Maximum altitude in meters")
     weight: float = Field(description="Weight in kg")

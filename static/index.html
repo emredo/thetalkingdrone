@@ -229,7 +229,11 @@
             </div>
             <div class="detail-row">
                 <div class="detail-label">Name:</div>
-                <div class="detail-value" id="droneName"></div>
+                <div class="detail-value" id="droneNameDisplay"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Type:</div>
+                <div class="detail-value" id="droneType"></div>
             </div>
             <div class="detail-row">
                 <div class="detail-label">Position:</div>
@@ -377,13 +381,16 @@
         // Fetch detailed drone information
         async function fetchDroneDetails(droneId) {
             try {
+                console.log("Fetching details for drone:", droneId);
                 const response = await fetch(`/drone/${droneId}/details`);
                 if (!response.ok) throw new Error('Failed to fetch drone details');
 
                 droneDetailData = await response.json();
+                console.log("Received drone details:", droneDetailData);
                 updateDroneDetailsPanel();
 
                 // Show the details panel
+                console.log("Showing details panel");
                 document.getElementById('droneDetails').style.display = 'block';
             } catch (error) {
                 console.error('Error fetching drone details:', error);
@@ -395,24 +402,29 @@
         function updateDroneDetailsPanel() {
             if (!droneDetailData) return;
 
-            document.getElementById('droneId').textContent = droneDetailData.id;
-            document.getElementById('droneName').textContent = droneDetailData.name;
+            document.getElementById('droneId').textContent = droneDetailData.drone_id;
+            document.getElementById('droneNameDisplay').textContent = droneDetailData.model.name;
+            document.getElementById('droneType').textContent = droneDetailData.model.type;
             document.getElementById('dronePosition').textContent =
-                `(${droneDetailData.location.x.toFixed(1)}, ${droneDetailData.location.y.toFixed(1)}, ${droneDetailData.location.z.toFixed(1)})`;
+                `(${droneDetailData.telemetry.position.x.toFixed(1)}, ${droneDetailData.telemetry.position.y.toFixed(1)}, ${droneDetailData.telemetry.position.z.toFixed(1)})`;
             document.getElementById('droneSpeed').textContent =
-                `${droneDetailData.speed.toFixed(1)} m/s (max: ${droneDetailData.max_speed.toFixed(1)} m/s)`;
+                `${droneDetailData.telemetry.speed.toFixed(1)} m/s (max: ${droneDetailData.model.max_speed.toFixed(1)} m/s)`;
             document.getElementById('droneHeading').textContent =
-                `${droneDetailData.heading.toFixed(1)}°`;
+                `${droneDetailData.telemetry.heading.toFixed(1)}°`;
+
+            // Calculate fuel percentage
+            const fuelPercentage = (droneDetailData.fuel_level / droneDetailData.model.fuel_capacity * 100);
             document.getElementById('droneFuel').textContent =
-                `${droneDetailData.fuel_level.toFixed(1)} / ${droneDetailData.fuel_capacity.toFixed(1)} (${droneDetailData.fuel_percentage.toFixed(1)}%)`;
+                `${droneDetailData.fuel_level.toFixed(1)} / ${droneDetailData.model.fuel_capacity.toFixed(1)} (${fuelPercentage.toFixed(1)}%)`;
+
             document.getElementById('droneWeight').textContent =
-                `${droneDetailData.weight.toFixed(1)} kg`;
+                `${droneDetailData.model.weight.toFixed(1)} kg`;
             document.getElementById('droneMaxAltitude').textContent =
-                `${droneDetailData.max_altitude.toFixed(1)} m`;
+                `${droneDetailData.model.max_altitude.toFixed(1)} m`;
             document.getElementById('droneDimensions').textContent =
-                `${droneDetailData.dimensions[0]} × ${droneDetailData.dimensions[1]} × ${droneDetailData.dimensions[2]} m`;
+                `${droneDetailData.model.dimensions[0]} × ${droneDetailData.model.dimensions[1]} × ${droneDetailData.model.dimensions[2]} m`;
             document.getElementById('droneMaxSpeed').textContent =
-                `${droneDetailData.max_speed.toFixed(1)} m/s`;
+                `${droneDetailData.model.max_speed.toFixed(1)} m/s`;
 
             // Update state badge
             const stateElem = document.getElementById('droneState');
@@ -683,8 +695,7 @@
 
             if (clickedDrone) {
                 // If clicked a drone, select it and show details
-                selectedDroneId = clickedDrone.drone_id;
-                fetchDroneDetails(selectedDroneId);
+                selectDrone(clickedDrone.drone_id);
             } else {
                 // If clicked empty space, deselect
                 clearSelectedDrone();
@@ -776,10 +787,10 @@
                 });
         }
 
-        // Modify selectDrone function to reset autopilot state
-        const originalSelectDrone = selectDrone;
-        selectDrone = function (droneId) {
-            originalSelectDrone(droneId);
+        // Handle drone selection (called when a drone is clicked)
+        function selectDrone(droneId) {
+            console.log("Selecting drone:", droneId);
+            selectedDroneId = droneId;
 
             // Reset autopilot state
             selectedDroneHasAutopilot = false;
@@ -787,6 +798,9 @@
             document.getElementById('initAutopilotBtn').disabled = false;
             document.getElementById('initAutopilotBtn').textContent = 'Initialize Autopilot';
             document.getElementById('commandResult').style.display = 'none';
+
+            // Fetch drone details and show panel
+            fetchDroneDetails(droneId);
 
             // Check if the selected drone already has an autopilot
             fetch(`/autopilot/list`)
