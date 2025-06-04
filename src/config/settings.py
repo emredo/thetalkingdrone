@@ -11,29 +11,29 @@ class Settings:
     debug: bool = False
 
     # Environment settings
-    boundaries: Tuple[float, float, float] = (100.0, 100.0, 50.0)
+    boundaries: Tuple[float, float, float] = (1.5, 1.5, 1.5)
     # Environment obstacles
     environment_obstacles: List[Obstacle] = [
         Obstacle(
-            location=Location(x=70.0, y=50.0, z=0.0),
-            dimensions=(10.0, 10.0, 20.0),
+            location=Location(x=0.70, y=0.50, z=0.0),
+            dimensions=(0.10, 0.10, 0.20),
             name="İTÜ Ayazağa",
         ),
         Obstacle(
-            location=Location(x=25.0, y=70.0, z=0.0),
-            dimensions=(10.0, 10.0, 20.0),
+            location=Location(x=0.25, y=0.70, z=0.0),
+            dimensions=(0.10, 0.10, 0.20),
             name="Taksim İlk Yardım",
         ),
         Obstacle(
-            location=Location(x=30.0, y=10.0, z=0.0),
-            dimensions=(10.0, 10.0, 20.0),
+            location=Location(x=0.30, y=0.10, z=0.0),
+            dimensions=(0.10, 0.10, 0.20),
             name="Gümüşsuyu",
         ),
     ]
 
     # Default drone model settings
     default_drone_name: str = "Standard Drone"
-    default_drone_max_speed: float = 10.0
+    default_drone_max_speed: float = 1.0
     default_drone_max_altitude: float = 1.5
     default_drone_weight: float = 0.100
     default_drone_dimensions: tuple = (0.10, 0.10, 0.02)

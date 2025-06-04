@@ -534,14 +534,14 @@
             ctx.strokeStyle = '#eee';
             ctx.lineWidth = 1;
 
-            for (let x = 0; x <= bounds[0]; x += 10) {
+            for (let x = 0; x <= bounds[0]; x += 0.1) {
                 ctx.beginPath();
                 ctx.moveTo(x * scaleX, 0);
                 ctx.lineTo(x * scaleX, canvas.height);
                 ctx.stroke();
             }
 
-            for (let y = 0; y <= bounds[1]; y += 10) {
+            for (let y = 0; y <= bounds[1]; y += 0.1) {
                 ctx.beginPath();
                 ctx.moveTo(0, y * scaleY);
                 ctx.lineTo(canvas.width, y * scaleY);
