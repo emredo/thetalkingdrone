@@ -16,4 +16,4 @@ FUEL_CRITICAL_LEVEL = 10.0  # Percentage
 FUEL_LOW_LEVEL = 20.0  # Percentage
 
 # Command constants
-COMMAND_TIMEOUT = 30.0  # seconds 
+COMMAND_TIMEOUT = 30.0  # seconds

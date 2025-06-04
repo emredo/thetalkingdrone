@@ -3,9 +3,10 @@ from typing import Any, Dict, List
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
+from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
 
-from src.config.llm_config import get_llm_object
+from src.config.settings import Settings
 from src.drone.service import DroneService
 from src.environment.models import Location, Obstacle
 
@@ -28,7 +29,12 @@ class AutoPilotAgent:
         """Setup the LangGraph agent with Gemini 2.5 Pro and tools for drone control."""
 
         # Initialize the LLM
-        self.llm = get_llm_object()
+        self.llm = init_chat_model(
+            model=Settings.langchain_model,
+            max_tokens=1000,
+            max_retries=3,
+            temperature=0.2,
+        )
 
         # Create tools from drone service methods
         self.tools = self._create_drone_tools()

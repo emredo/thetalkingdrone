@@ -9,15 +9,9 @@ from src.environment.service import EnvironmentService
 from src.utils.logger import logger
 
 from .exceptions import DroneException
-from .models import DroneModel
 from .service import DroneService
 
 router = APIRouter(prefix="/drone", tags=["drone"])
-
-
-# Simple in-memory store for demo purposes
-# In a real application, you'd use a proper database
-_drone_instances: Dict[str, DroneService] = {}
 _environment: Optional[EnvironmentService] = None
 
 
@@ -53,33 +47,9 @@ def get_drone_service(
     drone_id: str, environment: EnvironmentService = Depends(get_environment)
 ) -> DroneService:
     """Dependency to get drone service by ID."""
-    if drone_id not in _drone_instances:
+    if drone_id not in environment.state.drones:
         raise HTTPException(status_code=404, detail=f"Drone {drone_id} not found")
-    return _drone_instances[drone_id]
-
-
-@router.post("/register", response_model=str)
-def register_drone(
-    model: DroneModel, environment: EnvironmentService = Depends(get_environment)
-) -> str:
-    """Register a new drone with the specified model."""
-    try:
-        drone_service = DroneService.create_drone(model, environment)
-        drone_id = drone_service.drone.drone_id
-        _drone_instances[drone_id] = drone_service
-        return drone_id
-    except Exception as e:
-        logger.error(f"Failed to register drone: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/{drone_id}/telemetry", response_model=Dict[str, Any])
-def get_telemetry(
-    drone_service: DroneService = Depends(get_drone_service),
-) -> Dict[str, Any]:
-    """Get current telemetry for the specified drone."""
-    drone_service.update()  # Update drone state before returning telemetry
-    return drone_service.get_telemetry()
+    return environment.state.drones[drone_id]
 
 
 @router.get("/{drone_id}/details", response_model=DroneDetails)
@@ -159,9 +129,3 @@ def move_to(
             f"Move operation failed for drone {drone_service.drone.drone_id} to location ({target.x}, {target.y}, {target.z}): {str(e)}"
         )
         raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/list", response_model=List[str])
-def list_drones() -> List[str]:
-    """List all registered drone IDs."""
-    return list(_drone_instances.keys())

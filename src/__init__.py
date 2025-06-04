@@ -12,14 +12,13 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.autopilot.api import router as autopilot_router
-from src.config.settings import settings
+from src.config.settings import Settings
 from src.drone.api import router as drone_router
 from src.drone.models import DroneModel
 from src.drone.service import DroneService
 from src.environment.api import router as environment_router
 from src.environment.api import set_environment_instance
 from src.environment.models import Location
-from src.environment.sample_obstacles import get_sample_obstacles
 from src.environment.service import EnvironmentService
 from src.utils.logger import log_endpoint_error, logger
 from src.utils.simulation_monitor import get_simulation_monitor
@@ -28,10 +27,10 @@ from src.utils.simulation_monitor import get_simulation_monitor
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
-        title=settings.app_name,
+        title=Settings.app_name,
         description="API for the Talking Drone simulation",
         version="0.1.0",
-        debug=settings.debug,
+        debug=Settings.debug,
     )
 
     # Add request logging middleware
@@ -120,16 +119,9 @@ def create_app() -> FastAPI:
 
     # Create a global environment instance
     environment = EnvironmentService(
-        boundaries=(
-            settings.environment_max_x,
-            settings.environment_max_y,
-            settings.environment_max_z,
-        )
+        boundaries=Settings.boundaries,
+        obstacles=Settings.environment_obstacles,
     )
-
-    # Add some sample obstacles
-    for obstacle in get_sample_obstacles():
-        environment.add_obstacle(obstacle)
 
     # Add a sample wind condition
     from src.environment.models import WindCondition
@@ -149,13 +141,13 @@ def create_app() -> FastAPI:
     set_environment_instance(environment)
 
     # Include router for drone endpoints
-    app.include_router(drone_router, prefix=settings.api_prefix)
+    app.include_router(drone_router, prefix=Settings.api_prefix)
 
     # Include router for environment endpoints
-    app.include_router(environment_router, prefix=settings.api_prefix)
+    app.include_router(environment_router, prefix=Settings.api_prefix)
 
     # Include router for autopilot endpoints
-    app.include_router(autopilot_router, prefix=settings.api_prefix)
+    app.include_router(autopilot_router, prefix=Settings.api_prefix)
 
     # Mount static files
     app.mount("/viz", StaticFiles(directory="static", html=True), name="viz")
@@ -164,7 +156,7 @@ def create_app() -> FastAPI:
     @app.get("/")
     def read_root():
         return {
-            "app_name": settings.app_name,
+            "app_name": Settings.app_name,
             "version": "0.1.0",
             "api_docs": "/docs",
             "visualization": "/viz",
@@ -179,11 +171,7 @@ def create_app() -> FastAPI:
             environment.reset()
 
             # Clear all drone instances
-            from src.autopilot.api import _autopilot_agents
-            from src.drone.api import _drone_instances
-
-            _autopilot_agents.clear()
-            _drone_instances.clear()
+            environment.state.drones.clear()
 
             return {
                 "status": "success",
@@ -201,14 +189,14 @@ def create_app() -> FastAPI:
         try:
             # Create default drone model based on settings
             model = DroneModel(
-                name=settings.default_drone_name,
-                max_speed=settings.default_drone_max_speed,
-                max_altitude=settings.default_drone_max_altitude,
-                weight=settings.default_drone_weight,
-                dimensions=settings.default_drone_dimensions,
-                max_payload=settings.default_drone_max_payload,
-                fuel_capacity=settings.default_drone_fuel_capacity,
-                fuel_consumption_rate=settings.default_drone_fuel_consumption_rate,
+                name=Settings.default_drone_name,
+                max_speed=Settings.default_drone_max_speed,
+                max_altitude=Settings.default_drone_max_altitude,
+                weight=Settings.default_drone_weight,
+                dimensions=Settings.default_drone_dimensions,
+                max_payload=Settings.default_drone_max_payload,
+                fuel_capacity=Settings.default_drone_fuel_capacity,
+                fuel_consumption_rate=Settings.default_drone_fuel_consumption_rate,
             )
 
             # Create drone at a safe starting position
@@ -219,13 +207,9 @@ def create_app() -> FastAPI:
                 model=model, environment=environment, location=start_location
             )
 
-            # Register drone in the API's in-memory store
-            from src.drone.api import _drone_instances
+            environment.state.drones[drone_service.drone.drone_id] = drone_service.drone
 
-            drone_id = drone_service.drone.drone_id
-            _drone_instances[drone_id] = drone_service
-
-            return drone_id
+            return drone_service.drone.drone_id
 
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))

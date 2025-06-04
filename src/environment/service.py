@@ -2,7 +2,7 @@ import threading
 import time
 from typing import Tuple
 
-from src.environment.sample_obstacles import get_sample_obstacles
+from src.config.settings import Settings
 from src.utils.logger import logger
 
 from .exceptions import ObstacleCollisionException, OutOfBoundsException
@@ -12,10 +12,13 @@ from .models import EnvironmentState, Location, Obstacle, WindCondition
 class EnvironmentService:
     """Service for managing the environment state and interactions."""
 
-    def __init__(self, boundaries: Tuple[float, float, float] = (100.0, 100.0, 50.0)):
+    def __init__(self):
         """Initialize environment with boundaries."""
         logger.info("Initializing environment service")
-        self.state = EnvironmentState(boundaries=boundaries)
+        self.state = EnvironmentState(
+            boundaries=Settings.boundaries,
+            obstacles=Settings.environment_obstacles,
+        )
         self._last_update_time = time.time()
 
         # Threading setup
@@ -145,12 +148,9 @@ class EnvironmentService:
         self._last_update_time = time.time()
 
         # Reset environment state (keeping the same boundaries)
-        boundaries = self.state.boundaries
-        self.state = EnvironmentState(boundaries=boundaries)
-
-        # Add sample obstacles
-        for obstacle in get_sample_obstacles():
-            self.add_obstacle(obstacle)
+        self.state = EnvironmentState(
+            boundaries=Settings.boundaries, obstacles=Settings.environment_obstacles
+        )
 
         # Add a sample wind condition
         self.set_wind_condition(
