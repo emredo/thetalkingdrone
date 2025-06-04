@@ -24,7 +24,7 @@ class EnvironmentService:
 
         self.features = EnvironmentFeatures(
             boundaries=Settings.boundaries,
-            buildings=Settings.environment_obstacles,
+            buildings=Settings.buildings,
         )
         self.drones: Dict[str, DroneServiceBase] = {}
         self.time = 0.0
@@ -119,7 +119,7 @@ class EnvironmentService:
         from src.config.settings import Settings
 
         self.features = EnvironmentFeatures(
-            boundaries=Settings.boundaries, buildings=Settings.environment_obstacles
+            boundaries=Settings.boundaries, buildings=Settings.buildings
         )
 
         # Restart the simulation thread

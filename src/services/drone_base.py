@@ -1,13 +1,13 @@
 import threading
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict
 
 from src.constant.constants import THREAD_UPDATE_INTERVAL
 from src.models.physical_models import (
     DroneData,
     DroneModel,
     Location,
+    Telemetry,
 )
 from src.utils.logger import logger
 
@@ -41,8 +41,12 @@ class DroneServiceBase(ABC):
         drone_data = DroneData(
             drone_id=drone_id,
             model=model,
-            location=location,
             fuel_level=model.fuel_capacity,
+            telemetry=Telemetry(
+                position=location,
+                speed=0.0,
+                heading=0.0,
+            ),
         )
 
         # Set environment and return drone service
@@ -99,6 +103,6 @@ class DroneServiceBase(ABC):
         pass
 
     @abstractmethod
-    def get_telemetry(self) -> Dict[str, Any]:
+    def get_telemetry(self) -> Telemetry:
         """Get current drone telemetry data."""
         pass

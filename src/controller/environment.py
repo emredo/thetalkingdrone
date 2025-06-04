@@ -44,39 +44,18 @@ def get_environment_state(
     """Get the current state of the environment for visualization."""
     # Get environment state
     env_state = {
-        "boundaries": environment.features.boundaries,
         "time": environment.time,
-        "obstacles": [
-            {
-                "position": {
-                    "x": obstacle.location.x,
-                    "y": obstacle.location.y,
-                    "z": obstacle.location.z,
-                },
-                "name": obstacle.name or f"Obstacle-{i}",
-            }
-            for i, obstacle in enumerate(environment.features.buildings)
-        ],
+        "features": environment.features.model_dump(),
     }
 
     # Get all drone positions
-    drones = [
-        {
-            "id": drone_id,
-            "position": {
-                "x": drone_service.drone.location.x,
-                "y": drone_service.drone.location.y,
-                "z": drone_service.drone.location.z,
-            },
-            "state": drone_service.drone.state.value,
-            "fuel_level": drone_service.drone.fuel_level,
-        }
+    drones = {
+        drone_id: drone_service.drone.model_dump()
         for drone_id, drone_service in environment.drones.items()
-    ]
-
-    return {"environment": env_state, "drones": drones}
-
-    # Add simulation restart endpoint
+    }
+    foo = {"environment": env_state, "drones": drones}
+    print(foo)
+    return foo
 
 
 @router.post("/restart-simulation")

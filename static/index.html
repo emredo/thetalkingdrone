@@ -304,7 +304,7 @@
         <h3>Legend:</h3>
         <div class="legend-item">
             <div class="color-box" style="background-color: gray;"></div>
-            <span>Obstacle</span>
+            <span>Building</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: green;"></div>
@@ -349,7 +349,7 @@
                 environmentData = await response.json();
 
                 // Set scale factors based on environment boundaries
-                const bounds = environmentData.environment.boundaries;
+                const bounds = environmentData.environment.features.boundaries;
                 scaleX = canvas.width / bounds[0];
                 scaleY = canvas.height / bounds[1];
 
@@ -361,7 +361,7 @@
 
                 // If a drone is selected, update its details
                 if (selectedDroneId) {
-                    const selectedDrone = environmentData.drones.find(d => d.id === selectedDroneId);
+                    const selectedDrone = Object.values(environmentData.drones).find(d => d.drone_id === selectedDroneId);
                     if (selectedDrone) {
                         fetchDroneDetails(selectedDroneId);
                     } else {
@@ -553,7 +553,7 @@
             ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
             // Draw boundary coordinates
-            const bounds = environmentData.environment.boundaries;
+            const bounds = environmentData.environment.features.boundaries;
             ctx.fillStyle = '#666';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
@@ -588,33 +588,32 @@
                 ctx.stroke();
             }
 
-            // Draw obstacles
-            environmentData.environment.obstacles.forEach(obstacle => {
+            // Draw buildings
+            environmentData.environment.features.buildings.forEach(building => {
                 ctx.fillStyle = 'gray';
-                const x = obstacle.position.x * scaleX - (obstacle.dimensions[0] * scaleX / 2);
-                const y = obstacle.position.y * scaleY - (obstacle.dimensions[1] * scaleY / 2);
-                const width = obstacle.dimensions[0] * scaleX;
-                const height = obstacle.dimensions[1] * scaleY;
+                const x = building.location.x * scaleX;
+                const y = building.location.y * scaleY;
+                const radius = 0.10 * scaleX; // Use a fixed radius of 0.10m
 
-                ctx.fillRect(x, y, width, height);
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
 
-                // Label the obstacle
+                // Label the building
                 ctx.fillStyle = 'black';
                 ctx.font = '16px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                const centerX = x + width / 2;
-                const centerY = y + height / 2;
-                ctx.fillText(obstacle.name, centerX, centerY);
+                ctx.fillText(building.name, x, y);
             });
 
             // Draw drones
-            environmentData.drones.forEach(drone => {
-                const x = drone.position.x * scaleX;
-                const y = drone.position.y * scaleY;
+            Object.values(environmentData.drones).forEach(drone => {
+                const x = drone.telemetry.position.x * scaleX;
+                const y = drone.telemetry.position.y * scaleY;
 
                 // Draw highlight for selected drone
-                if (drone.id === selectedDroneId) {
+                if (drone.drone_id === selectedDroneId) {
                     ctx.beginPath();
                     ctx.arc(x, y, 12, 0, Math.PI * 2);
                     ctx.strokeStyle = 'gold';
@@ -643,7 +642,7 @@
                 ctx.stroke();
 
                 // Display only altitude with BIG BLACK TEXT
-                const altText = `${drone.position.z.toFixed(1)}m`;
+                const altText = `${drone.telemetry.position.z.toFixed(1)}m`;
                 ctx.font = 'bold 16px Arial';
                 ctx.fillStyle = 'black';
 
@@ -671,9 +670,9 @@
             let clickedDrone = null;
             const clickRadius = 8 / Math.min(scaleX, scaleY); // Convert 8px to environment units
 
-            for (const drone of environmentData.drones) {
-                const dx = drone.position.x - clickX;
-                const dy = drone.position.y - clickY;
+            for (const drone of Object.values(environmentData.drones)) {
+                const dx = drone.telemetry.position.x - clickX;
+                const dy = drone.telemetry.position.y - clickY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance <= clickRadius) {
@@ -684,8 +683,8 @@
 
             if (clickedDrone) {
                 // If clicked a drone, select it and show details
-                selectedDroneId = clickedDrone.id;
-                fetchDroneDetails(clickedDrone.id);
+                selectedDroneId = clickedDrone.drone_id;
+                fetchDroneDetails(selectedDroneId);
             } else {
                 // If clicked empty space, deselect
                 clearSelectedDrone();

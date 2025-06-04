@@ -1,15 +1,7 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, Field, validator
-
-
-class Telemetry(BaseModel):
-    """Model containing telemetry data."""
-
-    x: float = Field(default=0.0, description="X coordinate")
-    y: float = Field(default=0.0, description="Y coordinate")
-    z: float = Field(default=0.0, description="Z coordinate (altitude)")
 
 
 class DroneState(str, Enum):
@@ -47,6 +39,14 @@ class Location(BaseModel):
     z: float = Field(default=0.0, description="Z coordinate (altitude)")
 
 
+class Telemetry(BaseModel):
+    """Model containing telemetry data."""
+
+    speed: float = Field(default=0.0, description="Speed in m/s")
+    heading: float = Field(default=0.0, description="Heading in degrees")
+    position: Location = Field(description="Position in 3D space")
+
+
 class BuildingInformation(BaseModel):
     """Building information model representing buildings, etc."""
 
@@ -70,15 +70,10 @@ class DroneData(BaseModel):
 
     drone_id: str = Field(description="Unique identifier for the drone")
     model: DroneModel
-    location: Location = Field(default_factory=Location)
     state: DroneState = Field(default=DroneState.IDLE)
     fuel_level: float = Field(description="Current fuel level")
     payload: float = Field(default=0.0, description="Current payload weight in kg")
-    speed: float = Field(default=0.0, description="Current speed in m/s")
-    heading: float = Field(default=0.0, description="Current heading in degrees")
-    telemetry: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional telemetry data"
-    )
+    telemetry: Telemetry = Field(description="Additional telemetry data")
 
     @validator("fuel_level")
     def validate_fuel_level(cls, v, values):

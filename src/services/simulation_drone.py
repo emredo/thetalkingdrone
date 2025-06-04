@@ -1,7 +1,6 @@
 import math
 import threading
 import time
-from typing import Any, Dict
 
 from src.models.exceptions import (
     DroneException,
@@ -14,6 +13,7 @@ from src.models.physical_models import (
     DroneData,
     DroneState,
     Location,
+    Telemetry,
 )
 from src.services.drone_base import DroneServiceBase
 from src.utils.logger import logger
@@ -44,7 +44,7 @@ class SimulationDroneService(DroneServiceBase):
 
             if self.drone.state == DroneState.FLYING:
                 # Higher consumption when flying based on current speed
-                speed_factor = self.drone.speed / self.drone.model.max_speed
+                speed_factor = self.drone.telemetry.speed / self.drone.model.max_speed
                 fuel_consumption_factor = 1.0 + (
                     speed_factor * 0.5
                 )  # Up to 50% more consumption at max speed
@@ -106,7 +106,7 @@ class SimulationDroneService(DroneServiceBase):
             )
 
         # Calculate time needed for takeoff
-        altitude_difference = target_altitude - self.drone.location.z
+        altitude_difference = target_altitude - self.drone.telemetry.position.z
         takeoff_time = altitude_difference / vertical_speed  # Time in seconds
 
         # Calculate fuel required for takeoff
@@ -124,7 +124,7 @@ class SimulationDroneService(DroneServiceBase):
         self.drone.state = DroneState.TAKING_OFF
 
         # Set vertical speed
-        self.drone.speed = vertical_speed
+        self.drone.telemetry.speed = vertical_speed
 
         # Calculate the number of steps based on a reasonable update interval
         update_interval = 0.1  # seconds
@@ -146,16 +146,18 @@ class SimulationDroneService(DroneServiceBase):
                     break
 
                 # Calculate new position
-                new_z = self.drone.location.z + dz
+                new_z = self.drone.telemetry.position.z + dz
 
                 # Update drone location
                 new_location = Location(
-                    x=self.drone.location.x, y=self.drone.location.y, z=new_z
+                    x=self.drone.telemetry.position.x,
+                    y=self.drone.telemetry.position.y,
+                    z=new_z,
                 )
 
                 # Validate the new location
                 self.environment.validate_location(new_location)
-                self.drone.location = new_location
+                self.drone.telemetry.position = new_location
 
                 # Consume fuel for this step
                 step_fuel_consumption = (
@@ -170,14 +172,16 @@ class SimulationDroneService(DroneServiceBase):
 
             # Ensure we reach exactly the target altitude
             final_location = Location(
-                x=self.drone.location.x, y=self.drone.location.y, z=target_altitude
+                x=self.drone.telemetry.position.x,
+                y=self.drone.telemetry.position.y,
+                z=target_altitude,
             )
             self.environment.validate_location(final_location)
-            self.drone.location = final_location
+            self.drone.telemetry.position = final_location
 
             # Change state to flying and reset speed
             self.drone.state = DroneState.FLYING
-            self.drone.speed = 0.0
+            self.drone.telemetry.speed = 0.0
 
         except OutOfBoundsException as e:
             self.drone.state = DroneState.EMERGENCY
@@ -197,7 +201,7 @@ class SimulationDroneService(DroneServiceBase):
             )
 
         # Calculate time needed for landing
-        altitude_difference = self.drone.location.z - target_altitude
+        altitude_difference = self.drone.telemetry.position.z - target_altitude
         landing_time = altitude_difference / vertical_speed  # Time in seconds
 
         # Calculate fuel required for landing
@@ -217,7 +221,7 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.state = DroneState.LANDING
 
         # Set vertical speed (negative for descent)
-        self.drone.speed = vertical_speed
+        self.drone.telemetry.speed = vertical_speed
 
         # Calculate the number of steps based on a reasonable update interval
         update_interval = 0.1  # seconds
@@ -236,16 +240,18 @@ class SimulationDroneService(DroneServiceBase):
                     break
 
                 # Calculate new position
-                new_z = max(target_altitude, self.drone.location.z + dz)
+                new_z = max(target_altitude, self.drone.telemetry.position.z + dz)
 
                 # Update drone location
                 new_location = Location(
-                    x=self.drone.location.x, y=self.drone.location.y, z=new_z
+                    x=self.drone.telemetry.position.x,
+                    y=self.drone.telemetry.position.y,
+                    z=new_z,
                 )
 
                 # Validate the new location
                 self.environment.validate_location(new_location)
-                self.drone.location = new_location
+                self.drone.telemetry = new_location
 
                 # Consume fuel for this step
                 if self.drone.fuel_level > 0:
@@ -263,14 +269,16 @@ class SimulationDroneService(DroneServiceBase):
 
             # Ensure we reach exactly the target altitude
             final_location = Location(
-                x=self.drone.location.x, y=self.drone.location.y, z=target_altitude
+                x=self.drone.telemetry.position.x,
+                y=self.drone.telemetry.position.y,
+                z=target_altitude,
             )
             self.environment.validate_location(final_location)
-            self.drone.location = final_location
+            self.drone.telemetry.position = final_location
 
             # Change state to idle and reset speed
             self.drone.state = DroneState.IDLE
-            self.drone.speed = 0.0
+            self.drone.telemetry.speed = 0.0
 
         except OutOfBoundsException as e:
             self.drone.state = DroneState.EMERGENCY
@@ -291,9 +299,9 @@ class SimulationDroneService(DroneServiceBase):
 
         # Calculate distance to move
         distance = math.sqrt(
-            (target_location.x - self.drone.location.x) ** 2
-            + (target_location.y - self.drone.location.y) ** 2
-            + (target_location.z - self.drone.location.z) ** 2
+            (target_location.x - self.drone.telemetry.position.x) ** 2
+            + (target_location.y - self.drone.telemetry.position.y) ** 2
+            + (target_location.z - self.drone.telemetry.position.z) ** 2
         )
 
         # Calculate time to reach destination based on max speed
@@ -316,12 +324,12 @@ class SimulationDroneService(DroneServiceBase):
             num_steps = 1  # Ensure at least one step
 
         # Calculate step sizes for each coordinate
-        dx = (target_location.x - self.drone.location.x) / num_steps
-        dy = (target_location.y - self.drone.location.y) / num_steps
-        dz = (target_location.z - self.drone.location.z) / num_steps
+        dx = (target_location.x - self.drone.telemetry.position.x) / num_steps
+        dy = (target_location.y - self.drone.telemetry.position.y) / num_steps
+        dz = (target_location.z - self.drone.telemetry.position.z) / num_steps
 
         # Set current drone speed to max speed
-        self.drone.speed = self.drone.model.max_speed
+        self.drone.telemetry.speed = self.drone.model.max_speed
 
         # Move the drone step by step
         for step in range(num_steps):
@@ -329,12 +337,12 @@ class SimulationDroneService(DroneServiceBase):
                 break
 
             # Calculate new position
-            new_x = self.drone.location.x + dx
-            new_y = self.drone.location.y + dy
-            new_z = self.drone.location.z + dz
+            new_x = self.drone.telemetry.position.x + dx
+            new_y = self.drone.telemetry.position.y + dy
+            new_z = self.drone.telemetry.position.z + dz
 
             # Update drone location
-            self.drone.location = Location(x=new_x, y=new_y, z=new_z)
+            self.drone.telemetry = Location(x=new_x, y=new_y, z=new_z)
 
             # Consume fuel for this step
             step_fuel_consumption = (
@@ -346,30 +354,10 @@ class SimulationDroneService(DroneServiceBase):
             time.sleep(update_interval)
 
         # Ensure we reach exactly the target location
-        self.drone.location = target_location
+        self.drone.telemetry = target_location
 
         # Reset speed after reaching destination
-        self.drone.speed = 0.0
+        self.drone.telemetry.speed = 0.0
 
-    def get_telemetry(self) -> Dict[str, Any]:
-        """Get current drone telemetry data."""
-        telemetry = {
-            "drone_id": self.drone.drone_id,
-            "state": self.drone.state.value,
-            "location": {
-                "x": self.drone.location.x,
-                "y": self.drone.location.y,
-                "z": self.drone.location.z,
-            },
-            "fuel_level": self.drone.fuel_level,
-            "fuel_percentage": self.drone.fuel_level
-            / self.drone.model.fuel_capacity
-            * 100,
-            "speed": self.drone.speed,
-            "heading": self.drone.heading,
-        }
-
-        # Add custom telemetry
-        telemetry.update(self.drone.telemetry)
-
-        return telemetry
+    def get_telemetry(self) -> Telemetry:
+        return self.drone.telemetry

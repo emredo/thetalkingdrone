@@ -13,7 +13,7 @@ class Settings:
     # Environment settings
     boundaries: Tuple[float, float, float] = (1.5, 1.5, 1.5)
     # Environment obstacles
-    environment_obstacles: List[BuildingInformation] = [
+    buildings: List[BuildingInformation] = [
         BuildingInformation(
             location=Location(x=0.70, y=0.50, z=0.0),
             name="İTÜ Ayazağa",
@@ -29,7 +29,6 @@ class Settings:
     ]
 
     # Default drone model settings
-    default_drone_name: str = "Standard Drone"
     default_drone_max_speed: float = 1.0
     default_drone_max_altitude: float = 1.5
     default_drone_weight: float = 0.100
