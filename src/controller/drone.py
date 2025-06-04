@@ -2,15 +2,15 @@ from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.services.drone import DroneService
 from src.controller.environment import get_environment_instance
 from src.models import (
-    DroneException,
-    OutOfBoundsException,
-    ObstacleCollisionException,
     DroneDetails,
-    Location,
+    DroneException,
+    ObstacleCollisionException,
+    OutOfBoundsException,
 )
+from src.models.physical_models import Location
+from src.services.drone import DroneService
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/drone", tags=["drone"])

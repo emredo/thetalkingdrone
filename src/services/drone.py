@@ -4,12 +4,14 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
-from src.services.environment import EnvironmentService
-from src.models import (
-    Location,
-    Obstacle,
+from src.models.physical_models import (
+    DroneData,
     DroneModel,
     DroneState,
+    Location,
+    Obstacle,
+)
+from src.models.exceptions import (
     DroneException,
     DroneNotOperationalException,
     InsufficientFuelException,
@@ -17,18 +19,17 @@ from src.models import (
     ObstacleCollisionException,
     OutOfBoundsException,
 )
-from src.models.intersection_models import DroneData
 from src.utils.logger import logger
 
 
 class DroneService:
     """Service for managing drone operations and interactions with the environment."""
 
-    def __init__(self, drone_data: DroneData, environment: EnvironmentService):
+    def __init__(self, drone_data: DroneData):
         """Initialize drone service with drone data and environment."""
         logger.info("Initializing drone service")
         self.drone = drone_data
-        self.environment = environment
+        self.environment = None
         self._last_update_time = time.time()
 
         # Threading setup
@@ -39,24 +40,29 @@ class DroneService:
         # Start the drone thread
         self.start_drone_thread()
 
+    def set_environment(self, environment):
+        self.environment = environment
+
     @classmethod
     def create_drone(
         cls,
         model: DroneModel,
-        environment: EnvironmentService,
+        location: Location,
         drone_id: Optional[str] = None,
-        location: Optional[Location] = None,
     ) -> "DroneService":
         """Factory method to create a new drone service instance."""
+        from src.controller.environment import get_environment_instance
+
         if drone_id is None:
             drone_id = str(uuid.uuid4())
 
         if location is None:
             location = Location()
 
-        # Validate the starting location
+        environment = get_environment_instance()
         environment.validate_location(location)
 
+        # Create drone service
         # Create drone data with full fuel
         drone_data = DroneData(
             drone_id=drone_id,
@@ -65,7 +71,10 @@ class DroneService:
             fuel_level=model.fuel_capacity,
         )
 
-        return cls(drone_data, environment)
+        # Set environment and return drone service
+        drone_service = cls(drone_data)
+        drone_service.set_environment(environment)
+        return drone_service
 
     def update(self) -> None:
         """Update drone state based on elapsed time."""

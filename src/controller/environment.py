@@ -2,9 +2,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.config.settings import Settings
-from src.models.drone import DroneModel
-from src.models.environment import Location
+from src.models.physical_models import DroneModel, Location
 from src.services.drone import DroneService
 from src.services.environment import EnvironmentService
 
@@ -98,6 +96,8 @@ def create_default_drone():
     """Create a default drone for testing."""
     try:
         # Create default drone model based on settings
+        from src.config.settings import Settings
+
         model = DroneModel(
             name=Settings.default_drone_name,
             max_speed=Settings.default_drone_max_speed,
@@ -114,9 +114,7 @@ def create_default_drone():
 
         environment = get_environment_instance()
         # Create drone service
-        drone_service = DroneService.create_drone(
-            model=model, environment=environment, location=start_location
-        )
+        drone_service = DroneService.create_drone(model=model, location=start_location)
 
         environment.state.drones[drone_service.drone.drone_id] = drone_service.drone
 

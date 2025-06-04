@@ -1,15 +1,12 @@
 import threading
 import time
 
-from src.utils.logger import logger
-
 from src.models import (
-    EnvironmentState,
-    Obstacle,
-    Location,
     ObstacleCollisionException,
     OutOfBoundsException,
 )
+from src.models.physical_models import EnvironmentState, Location, Obstacle
+from src.utils.logger import logger
 
 
 class EnvironmentService:

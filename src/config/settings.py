@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from src.models.environment import Location, Obstacle
+from src.models.physical_models import Location, Obstacle
 
 
 class Settings:

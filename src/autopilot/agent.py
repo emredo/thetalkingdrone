@@ -6,13 +6,12 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
-from src.services.drone import DroneService
 from src.models import (
     AgentNotInitializedException,
     InvalidCommandException,
-    Location,
-    Obstacle,
 )
+from src.models.physical_models import Location, Obstacle
+from src.services.drone import DroneService
 
 
 class AutoPilotAgent:
