@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from src.autopilot.agent import AutoPilotAgent
 from src.controller.drone import get_drone_service
 from src.drone.service import DroneService
-from src.models.exceptions import AgentNotInitializedException, AutopilotException
+from src.models import AgentNotInitializedException, AutopilotException
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/autopilot", tags=["autopilot"])

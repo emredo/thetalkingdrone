@@ -11,15 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.autopilot.api import router as autopilot_router
 from src.config.settings import Settings
+from src.controller.autopilot import router as autopilot_router
 from src.controller.drone import router as drone_router
-from src.models.drone import DroneModel
-from src.drone.service import DroneService
 from src.controller.environment import router as environment_router
 from src.controller.environment import set_environment_instance
-from src.models.intersection_models import Location
+from src.drone.service import DroneService
 from src.environment.service import EnvironmentService
+from src.models import DroneModel, Location
 from src.utils.logger import log_endpoint_error, logger
 from src.utils.simulation_monitor import get_simulation_monitor
 
