@@ -261,10 +261,6 @@
             <div class="color-box" style="background-color: red;"></div>
             <span>Drone (EMERGENCY)</span>
         </div>
-        <div class="legend-item">
-            <div style="color: blue; font-weight: bold;">→</div>
-            <span>Wind Direction</span>
-        </div>
     </div>
 
     <script>
@@ -573,49 +569,6 @@
                 const centerX = x + width / 2;
                 const centerY = y + height / 2;
                 ctx.fillText(obstacle.name, centerX, centerY);
-            });
-
-            // Draw wind indicators
-            environmentData.environment.wind_conditions.forEach(wind => {
-                const gridX = wind.grid_position.x * 10 * scaleX + 5 * scaleX;
-                const gridY = wind.grid_position.y * 10 * scaleY + 5 * scaleY;
-
-                const windLength = Math.min(wind.speed * 5, 20); // Scale wind vector
-
-                ctx.strokeStyle = 'blue';
-                ctx.lineWidth = 2;
-
-                // Draw wind vector
-                ctx.beginPath();
-                ctx.moveTo(gridX, gridY);
-                ctx.lineTo(
-                    gridX + wind.direction[0] * windLength * scaleX,
-                    gridY + wind.direction[1] * windLength * scaleY
-                );
-                ctx.stroke();
-
-                // Draw arrowhead
-                const angle = Math.atan2(
-                    wind.direction[1],
-                    wind.direction[0]
-                );
-
-                const tipX = gridX + wind.direction[0] * windLength * scaleX;
-                const tipY = gridY + wind.direction[1] * windLength * scaleY;
-
-                ctx.beginPath();
-                ctx.moveTo(tipX, tipY);
-                ctx.lineTo(
-                    tipX - 10 * Math.cos(angle - Math.PI / 6),
-                    tipY - 10 * Math.sin(angle - Math.PI / 6)
-                );
-                ctx.lineTo(
-                    tipX - 10 * Math.cos(angle + Math.PI / 6),
-                    tipY - 10 * Math.sin(angle + Math.PI / 6)
-                );
-                ctx.closePath();
-                ctx.fillStyle = 'blue';
-                ctx.fill();
             });
 
             // Draw drones

@@ -2,7 +2,6 @@
 
 # Environment constants
 DEFAULT_ENVIRONMENT_BOUNDARIES = (100.0, 100.0, 50.0)
-GRID_SIZE = 10.0  # Size of grid cells for wind conditions
 
 # Drone constants
 MIN_ALTITUDE = 0.0

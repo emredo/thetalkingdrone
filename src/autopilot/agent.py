@@ -1,16 +1,17 @@
 from typing import Any, Dict, List
 
+from langchain.chat_models import init_chat_model
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
-from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
 
 from src.config.settings import Settings
 from src.drone.service import DroneService
-from src.environment.models import Location, Obstacle
+from src.models.environment import Obstacle
 
-from .exceptions import AgentNotInitializedException, InvalidCommandException
+from src.models.exceptions import AgentNotInitializedException, InvalidCommandException
+from src.models.intersection_models import Location
 
 
 class AutoPilotAgent:

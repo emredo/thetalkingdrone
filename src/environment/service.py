@@ -1,12 +1,12 @@
 import threading
 import time
-from typing import Tuple
 
 from src.config.settings import Settings
+from ..models.intersection_models import Location
 from src.utils.logger import logger
 
-from .exceptions import ObstacleCollisionException, OutOfBoundsException
-from .models import EnvironmentState, Location, Obstacle, WindCondition
+from ..models.environment import EnvironmentState, Obstacle
+from ..models.exceptions import ObstacleCollisionException, OutOfBoundsException
 
 
 class EnvironmentService:
@@ -32,21 +32,6 @@ class EnvironmentService:
     def add_obstacle(self, obstacle: Obstacle) -> None:
         """Add an obstacle to the environment."""
         self.state.obstacles.append(obstacle)
-
-    def set_wind_condition(
-        self, grid_position: Tuple[int, int], wind: WindCondition
-    ) -> None:
-        """Set wind condition for a specific grid position."""
-        self.state.wind_conditions[grid_position] = wind
-
-    def get_wind_at_location(self, location: Location) -> WindCondition:
-        """Get wind condition at a specific location."""
-        # Convert location to grid coordinates (simple approach)
-        grid_x = int(location.x // 10)
-        grid_y = int(location.y // 10)
-
-        # Return the wind condition for this grid if exists, otherwise default
-        return self.state.wind_conditions.get((grid_x, grid_y), WindCondition())
 
     def check_collision(self, location: Location) -> bool:
         """Check if location collides with any obstacle."""
@@ -150,14 +135,6 @@ class EnvironmentService:
         # Reset environment state (keeping the same boundaries)
         self.state = EnvironmentState(
             boundaries=Settings.boundaries, obstacles=Settings.environment_obstacles
-        )
-
-        # Add a sample wind condition
-        self.set_wind_condition(
-            (3, 5), WindCondition(direction=(1.0, 0.5, 0.0), speed=8.0)
-        )
-        self.set_wind_condition(
-            (7, 2), WindCondition(direction=(-0.5, 1.0, 0.0), speed=5.0)
         )
 
         # Restart the simulation thread

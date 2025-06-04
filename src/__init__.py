@@ -14,11 +14,11 @@ from fastapi.staticfiles import StaticFiles
 from src.autopilot.api import router as autopilot_router
 from src.config.settings import Settings
 from src.drone.api import router as drone_router
-from src.drone.models import DroneModel
+from src.models.drone import DroneModel
 from src.drone.service import DroneService
 from src.environment.api import router as environment_router
 from src.environment.api import set_environment_instance
-from src.environment.models import Location
+from src.models.intersection_models import Location
 from src.environment.service import EnvironmentService
 from src.utils.logger import log_endpoint_error, logger
 from src.utils.simulation_monitor import get_simulation_monitor
@@ -121,16 +121,6 @@ def create_app() -> FastAPI:
     environment = EnvironmentService(
         boundaries=Settings.boundaries,
         obstacles=Settings.environment_obstacles,
-    )
-
-    # Add a sample wind condition
-    from src.environment.models import WindCondition
-
-    environment.set_wind_condition(
-        (3, 5), WindCondition(direction=(1.0, 0.5, 0.0), speed=8.0)
-    )
-    environment.set_wind_condition(
-        (7, 2), WindCondition(direction=(-0.5, 1.0, 0.0), speed=5.0)
     )
 
     # Start the simulation monitor to log simulation time every 10 seconds

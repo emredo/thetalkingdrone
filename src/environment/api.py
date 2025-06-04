@@ -46,14 +46,6 @@ def get_environment_state(
             }
             for i, obstacle in enumerate(environment.state.obstacles)
         ],
-        "wind_conditions": [
-            {
-                "grid_position": {"x": pos[0], "y": pos[1]},
-                "direction": wind.direction,
-                "speed": wind.speed,
-            }
-            for pos, wind in environment.state.wind_conditions.items()
-        ],
     }
 
     # Get all drone positions

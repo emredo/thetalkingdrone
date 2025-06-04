@@ -1,24 +1,8 @@
 from typing import Dict, List, Optional, Tuple
+
 from pydantic import BaseModel, Field
 
-from src.drone.models import DroneData
-
-
-class Location(BaseModel):
-    """Location model representing 3D coordinates."""
-
-    x: float = Field(default=0.0, description="X coordinate")
-    y: float = Field(default=0.0, description="Y coordinate")
-    z: float = Field(default=0.0, description="Z coordinate (altitude)")
-
-
-class WindCondition(BaseModel):
-    """Wind condition model."""
-
-    direction: Tuple[float, float, float] = Field(
-        default=(0.0, 0.0, 0.0), description="Wind direction vector (x, y, z)"
-    )
-    speed: float = Field(default=0.0, description="Wind speed in m/s")
+from src.models.intersection_models import DroneData, Location
 
 
 class Obstacle(BaseModel):
@@ -42,9 +26,5 @@ class EnvironmentState(BaseModel):
     )
     obstacles: List[Obstacle] = Field(
         default_factory=list, description="List of obstacles in the environment"
-    )
-    wind_conditions: Dict[Tuple[int, int], WindCondition] = Field(
-        default_factory=dict,
-        description="Wind conditions mapped by grid coordinates (x, y)",
     )
     time: float = Field(default=0.0, description="Current simulation time")

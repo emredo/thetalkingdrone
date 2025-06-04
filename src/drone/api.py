@@ -3,13 +3,15 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from src.environment.exceptions import ObstacleCollisionException, OutOfBoundsException
-from src.environment.models import Location
+from src.drone.service import DroneService
 from src.environment.service import EnvironmentService
+from src.models.intersection_models import Location
+from src.models.exceptions import (
+    DroneException,
+    ObstacleCollisionException,
+    OutOfBoundsException,
+)
 from src.utils.logger import logger
-
-from .exceptions import DroneException
-from .service import DroneService
 
 router = APIRouter(prefix="/drone", tags=["drone"])
 _environment: Optional[EnvironmentService] = None

@@ -1,7 +1,8 @@
 from typing import List, Tuple
 from pydantic import Field
 
-from src.environment.models import Location, Obstacle
+from src.models.environment import Obstacle
+from src.models.intersection_models import Location
 
 
 class Settings:

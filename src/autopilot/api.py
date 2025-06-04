@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from src.autopilot.agent import AutoPilotAgent
-from src.autopilot.exceptions import AgentNotInitializedException, AutopilotException
 from src.drone.api import get_drone_service
 from src.drone.service import DroneService
+from src.models.exceptions import AgentNotInitializedException, AutopilotException
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/autopilot", tags=["autopilot"])

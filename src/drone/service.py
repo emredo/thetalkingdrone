@@ -4,18 +4,19 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
-from src.environment.exceptions import ObstacleCollisionException, OutOfBoundsException
-from src.environment.models import Location, Obstacle
 from src.environment.service import EnvironmentService
+from src.models.environment import Location, Obstacle
+from src.models.exceptions import ObstacleCollisionException, OutOfBoundsException
 from src.utils.logger import logger
 
-from .exceptions import (
+from ..models.drone import DroneModel, DroneState
+from ..models.exceptions import (
     DroneException,
     DroneNotOperationalException,
     InsufficientFuelException,
     InvalidDroneCommandException,
 )
-from .models import DroneData, DroneModel, DroneState
+from ..models.intersection_models import DroneData
 
 
 class DroneService:
@@ -409,16 +410,13 @@ class DroneService:
             * 100,
             "speed": self.drone.speed,
             "heading": self.drone.heading,
-            "wind_conditions": self.environment.get_wind_at_location(
-                self.drone.location
-            ).dict(),
         }
 
         # Add custom telemetry
         telemetry.update(self.drone.telemetry)
 
         return telemetry
-    
+
     def get_obstacles(self) -> List[Obstacle]:
         """Get the list of obstacles in the environment."""
         return self.environment.state.obstacles
