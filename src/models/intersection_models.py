@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field, validator
 
+from src.drone.service import DroneService
 from src.models.drone import DroneModel, DroneState
 from src.models.environment import Location, Obstacle
 
@@ -57,7 +58,7 @@ class DroneData(BaseModel):
 class EnvironmentState(BaseModel):
     """Model representing the state of the environment."""
 
-    drones: Optional[Dict[str, DroneData]] = Field(
+    drones: Optional[Dict[str, "DroneService"]] = Field(
         default_factory=dict, description="Drones in the environment"
     )
     boundaries: Tuple[float, float, float] = Field(

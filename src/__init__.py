@@ -13,11 +13,11 @@ from fastapi.staticfiles import StaticFiles
 
 from src.autopilot.api import router as autopilot_router
 from src.config.settings import Settings
-from src.drone.api import router as drone_router
+from src.controller.drone import router as drone_router
 from src.models.drone import DroneModel
 from src.drone.service import DroneService
-from src.environment.api import router as environment_router
-from src.environment.api import set_environment_instance
+from src.controller.environment import router as environment_router
+from src.controller.environment import set_environment_instance
 from src.models.intersection_models import Location
 from src.environment.service import EnvironmentService
 from src.utils.logger import log_endpoint_error, logger

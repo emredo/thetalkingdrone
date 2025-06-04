@@ -1,54 +1,24 @@
-from typing import Any, Dict, List, Optional
+from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 
 from src.drone.service import DroneService
-from src.environment.service import EnvironmentService
-from src.models.intersection_models import Location
+from src.controller.environment import get_environment_instance
 from src.models.exceptions import (
     DroneException,
     ObstacleCollisionException,
     OutOfBoundsException,
 )
+from src.models.intersection_models import Location
+from src.models.response import DroneDetails
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/drone", tags=["drone"])
-_environment: Optional[EnvironmentService] = None
 
 
-# Response model for drone details
-class DroneDetails(BaseModel):
-    id: str
-    name: str
-    state: str
-    fuel_level: float
-    fuel_capacity: float
-    fuel_percentage: float
-    location: Dict[str, float]
-    speed: float
-    heading: float
-    max_speed: float
-    max_altitude: float
-    weight: float
-    dimensions: List[float]
-    max_payload: float
-    current_payload: float
-    telemetry: Dict[str, Any]
-
-
-def get_environment() -> EnvironmentService:
-    """Dependency to get environment instance."""
-    global _environment
-    if _environment is None:
-        _environment = EnvironmentService()
-    return _environment
-
-
-def get_drone_service(
-    drone_id: str, environment: EnvironmentService = Depends(get_environment)
-) -> DroneService:
+def get_drone_service(drone_id: str) -> DroneService:
     """Dependency to get drone service by ID."""
+    environment = get_environment_instance()
     if drone_id not in environment.state.drones:
         raise HTTPException(status_code=404, detail=f"Drone {drone_id} not found")
     return environment.state.drones[drone_id]
