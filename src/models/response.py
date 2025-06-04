@@ -18,6 +18,5 @@ class DroneDetails(BaseModel):
     max_altitude: float
     weight: float
     dimensions: List[float]
-    max_payload: float
     current_payload: float
     telemetry: Dict[str, Any]

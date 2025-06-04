@@ -48,7 +48,6 @@ def get_drone_details(
         max_altitude=drone.model.max_altitude,
         weight=drone.model.weight,
         dimensions=list(drone.model.dimensions),
-        max_payload=drone.model.max_payload,
         current_payload=drone.payload,
         telemetry=drone.telemetry,
     )

@@ -33,11 +33,10 @@ class Settings:
 
     # Default drone model settings
     default_drone_name: str = "Standard Drone"
-    default_drone_max_speed: float = 1.0
-    default_drone_max_altitude: float = 100.0
-    default_drone_weight: float = 1.5
-    default_drone_dimensions: tuple = (0.5, 0.5, 0.2)
-    default_drone_max_payload: float = 0.5
+    default_drone_max_speed: float = 10.0
+    default_drone_max_altitude: float = 1.5
+    default_drone_weight: float = 0.100
+    default_drone_dimensions: tuple = (0.10, 0.10, 0.02)
     default_drone_fuel_capacity: float = 100.0
     default_drone_fuel_consumption_rate: float = 1.0
 

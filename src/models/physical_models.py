@@ -25,7 +25,6 @@ class DroneModel(BaseModel):
     dimensions: tuple[float, float, float] = Field(
         description="Width, length, height in meters"
     )
-    max_payload: float = Field(description="Maximum payload capacity in kg")
     fuel_capacity: float = Field(description="Fuel capacity in units")
     fuel_consumption_rate: float = Field(
         description="Fuel consumption per minute of flight"
@@ -88,22 +87,6 @@ class DroneData(BaseModel):
         if v > values["model"].fuel_capacity:
             raise ValueError(
                 f"Fuel level cannot exceed capacity of {values['model'].fuel_capacity}"
-            )
-
-        return v
-
-    @validator("payload")
-    def validate_payload(cls, v, values):
-        """Validate that payload doesn't exceed maximum capacity."""
-        if "model" not in values:
-            return v
-
-        if v < 0:
-            raise ValueError("Payload cannot be negative")
-
-        if v > values["model"].max_payload:
-            raise ValueError(
-                f"Payload cannot exceed maximum of {values['model'].max_payload} kg"
             )
 
         return v

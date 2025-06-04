@@ -104,7 +104,6 @@ def create_default_drone():
             max_altitude=Settings.default_drone_max_altitude,
             weight=Settings.default_drone_weight,
             dimensions=Settings.default_drone_dimensions,
-            max_payload=Settings.default_drone_max_payload,
             fuel_capacity=Settings.default_drone_fuel_capacity,
             fuel_consumption_rate=Settings.default_drone_fuel_consumption_rate,
         )
