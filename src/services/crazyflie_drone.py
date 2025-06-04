@@ -1,3 +1,4 @@
+import threading
 import time
 import warnings
 from typing import Any, Dict, List, Optional
@@ -42,11 +43,28 @@ class CrazyFlieService(DroneServiceBase):
         }
         self._environment = None  # Placeholder for environment if needed
 
+        # Threading setup
+        self._stop_event = threading.Event()
+        self._drone_thread: Optional[threading.Thread] = None
+        self._is_running = False
+        self._last_update_time = time.time()  # Added for consistency with simulation
+
         # Suppress deprecation warnings from cflib
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+    def update(self) -> None:
+        """Update the drone state based on elapsed time."""
+        # current_time = time.time()
+        # elapsed_time = current_time - self._last_update_time
+        # self._last_update_time = current_time
+        # This method can be expanded to fetch telemetry or check status periodically
+        pass
+
     def start_service(self) -> None:
         logger.info("Starting CrazyFlie service...")
+        if self._is_running:
+            logger.warning("CrazyFlie service thread is already running.")
+            return
         try:
             cflib.crtp.init_drivers()
             self._scf = SyncCrazyflie(self._uri, cf=self._cf)
@@ -54,16 +72,43 @@ class CrazyFlieService(DroneServiceBase):
             self._is_connected = True
             # self._mc = MotionCommander(self._scf, default_height=DEFAULT_HEIGHT)
             logger.info(f"Successfully connected to Crazyflie at {self._uri}")
-            # Start telemetry loggers if needed
-            # self._start_telemetry_logging()
+
+            # Start the drone update thread
+            self._stop_event.clear()
+            self._drone_thread = threading.Thread(target=self._drone_loop, daemon=True)
+            self._drone_thread.start()
+            self._is_running = True
+            logger.info(f"CrazyFlie service thread started for {self._uri}")
+
         except Exception as e:
             logger.error(f"Failed to connect to Crazyflie: {e}")
             self._is_connected = False
+            self._is_running = False  # Ensure this is false if connection fails
             # Raise an exception or handle appropriately
             raise ConnectionError(f"Failed to connect to Crazyflie: {e}")
 
     def stop_service(self) -> None:
         logger.info("Stopping CrazyFlie service...")
+
+        if not self._is_running:
+            logger.warning(
+                "CrazyFlie service thread is not running or already stopped."
+            )
+            # Proceed with other cleanup if necessary, but thread part is done
+        else:
+            self._stop_event.set()
+            if self._drone_thread:
+                logger.info(
+                    f"Waiting for CrazyFlie service thread to stop for {self._uri}..."
+                )
+                self._drone_thread.join(timeout=2.0)
+                if self._drone_thread.is_alive():
+                    logger.warning(
+                        f"CrazyFlie service thread for {self._uri} did not stop in time."
+                    )
+            self._is_running = False
+            logger.info(f"CrazyFlie service thread stopped for {self._uri}.")
+
         if self._mc:
             try:
                 # Ensure drone is landed before closing if using motion commander
@@ -83,6 +128,9 @@ class CrazyFlieService(DroneServiceBase):
     def take_off(self) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")
+        if not self._is_running:  # Added check
+            logger.warning("Cannot take_off, service not running.")  # Added log
+            raise RuntimeError("Service not running, cannot take_off.")
 
         altitude = DEFAULT_HEIGHT
         duration = 2.0
@@ -105,6 +153,9 @@ class CrazyFlieService(DroneServiceBase):
     def land(self) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")
+        if not self._is_running:  # Added check
+            logger.warning("Cannot land, service not running.")  # Added log
+            raise RuntimeError("Service not running, cannot land.")
 
         height = 0.0
         duration = 2.0
@@ -130,6 +181,9 @@ class CrazyFlieService(DroneServiceBase):
     ) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")
+        if not self._is_running:  # Added check
+            logger.warning("Cannot move_to, service not running.")  # Added log
+            raise RuntimeError("Service not running, cannot move_to.")
 
         logger.info(
             f"Commanding drone to move to {target_location}, duration: {duration}s"
@@ -189,6 +243,8 @@ class CrazyFlieService(DroneServiceBase):
             # Return last known if not connected, or raise error
             logger.warning("Returning last known telemetry; Crazyflie not connected.")
             # Add a timestamp to telemetry to indicate freshness
+            if "timestamp" not in self._telemetry_data:
+                self._telemetry_data["timestamp"] = 0  # initialize if not present
             self._telemetry_data["timestamp"] = time.time()
             return self._telemetry_data
 
@@ -225,6 +281,21 @@ class CrazyFlieService(DroneServiceBase):
         if self._environment and hasattr(self._environment, "get_obstacles"):
             return self._environment.get_obstacles()
         return []  # Return empty list by default
+
+    def _drone_loop(self) -> None:
+        """Internal drone loop that runs in a separate thread."""
+        logger.info(f"CrazyFlie drone loop started for {self._uri}")
+        while not self._stop_event.is_set():
+            try:
+                self.update()
+            except Exception as e:
+                logger.error(f"Error in CrazyFlie drone loop for {self._uri}: {e}")
+                # Decide if to break loop or continue
+
+            # Small sleep to prevent CPU overuse
+            # Adjust sleep duration as needed (e.g., 0.1 to 1.0 seconds)
+            self._stop_event.wait(0.2)  # Update every 200ms, consistent with simulation
+        logger.info(f"CrazyFlie drone loop stopped for {self._uri}")
 
     def __del__(self):
         """Destructor to ensure resources are cleaned up."""

@@ -11,6 +11,11 @@ class DroneServiceBase(ABC):
     """Abstract Base Class for drone services."""
 
     @abstractmethod
+    def update(self) -> None:
+        """Update the drone state based on elapsed time."""
+        pass
+
+    @abstractmethod
     def take_off(self) -> None:
         """Command drone to take off."""
         pass
