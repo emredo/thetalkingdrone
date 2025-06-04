@@ -7,7 +7,7 @@ from src.models import (
     OutOfBoundsException,
 )
 from src.models.physical_models import EnvironmentFeatures, Location, Obstacle
-from src.services.drone import DroneService
+from src.services.simulation_drone import SimulationDroneService
 from src.utils.logger import logger
 
 
@@ -23,7 +23,7 @@ class EnvironmentService:
             boundaries=Settings.boundaries,
             obstacles=Settings.environment_obstacles,
         )
-        self.drones: Dict[str, DroneService] = {}
+        self.drones: Dict[str, SimulationDroneService] = {}
         self.time = 0.0
         self._last_update_time = time.time()
 

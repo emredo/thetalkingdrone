@@ -5,8 +5,8 @@ from pydantic import BaseModel
 
 from src.autopilot.agent import AutoPilotAgent
 from src.controller.drone import get_drone_service
-from src.services.drone import DroneService
 from src.models import AgentNotInitializedException, AutopilotException
+from src.services.simulation_drone import SimulationDroneService
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/autopilot", tags=["autopilot"])
@@ -32,7 +32,7 @@ def get_autopilot_agent(drone_id: str) -> AutoPilotAgent:
 
 @router.post("/{drone_id}/initialize")
 def initialize_autopilot(
-    drone_service: DroneService = Depends(get_drone_service),
+    drone_service: SimulationDroneService = Depends(get_drone_service),
 ) -> Dict[str, str]:
     """Initialize autopilot agent for a drone."""
     drone_id = drone_service.drone.drone_id

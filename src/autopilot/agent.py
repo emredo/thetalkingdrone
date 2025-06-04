@@ -6,19 +6,19 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
+from src.constant.keys import GOOGLE_API_KEY
 from src.models import (
     AgentNotInitializedException,
     InvalidCommandException,
 )
 from src.models.physical_models import Location, Obstacle
-from src.services.drone import DroneService
-from src.constant.keys import GOOGLE_API_KEY
+from src.services.simulation_drone import SimulationDroneService
 
 
 class AutoPilotAgent:
     """AutoPilot agent implementation using Gemini 2.5 Pro with LangGraph."""
 
-    def __init__(self, drone_service: DroneService):
+    def __init__(self, drone_service: SimulationDroneService):
         """Initialize the Gemini autopilot agent."""
         self.drone_service = drone_service
         self.tools = []

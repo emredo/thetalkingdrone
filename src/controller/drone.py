@@ -10,13 +10,13 @@ from src.models import (
     OutOfBoundsException,
 )
 from src.models.physical_models import Location
-from src.services.drone import DroneService
+from src.services.simulation_drone import SimulationDroneService
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/drone", tags=["drone"])
 
 
-def get_drone_service(drone_id: str) -> DroneService:
+def get_drone_service(drone_id: str) -> SimulationDroneService:
     """Dependency to get drone service by ID."""
     environment = get_environment_instance()
     if drone_id not in environment.drones:
@@ -26,7 +26,7 @@ def get_drone_service(drone_id: str) -> DroneService:
 
 @router.get("/{drone_id}/details", response_model=DroneDetails)
 def get_drone_details(
-    drone_service: DroneService = Depends(get_drone_service),
+    drone_service: SimulationDroneService = Depends(get_drone_service),
 ) -> DroneDetails:
     """Get detailed information about a specific drone."""
     drone_service.update()  # Update drone state
@@ -55,7 +55,7 @@ def get_drone_details(
 
 @router.post("/{drone_id}/takeoff")
 def take_off(
-    drone_service: DroneService = Depends(get_drone_service),
+    drone_service: SimulationDroneService = Depends(get_drone_service),
 ) -> Dict[str, str]:
     """Command drone to take off to the specified altitude."""
     try:
@@ -72,7 +72,9 @@ def take_off(
 
 
 @router.post("/{drone_id}/land")
-def land(drone_service: DroneService = Depends(get_drone_service)) -> Dict[str, str]:
+def land(
+    drone_service: SimulationDroneService = Depends(get_drone_service),
+) -> Dict[str, str]:
     """Command drone to land."""
     try:
         drone_service.land()
@@ -86,7 +88,7 @@ def land(drone_service: DroneService = Depends(get_drone_service)) -> Dict[str, 
 
 @router.post("/{drone_id}/move")
 def move_to(
-    target: Location, drone_service: DroneService = Depends(get_drone_service)
+    target: Location, drone_service: SimulationDroneService = Depends(get_drone_service)
 ) -> Dict[str, str]:
     """Command drone to move to the specified location."""
     try:

@@ -3,8 +3,8 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.models.physical_models import DroneModel, Location
-from src.services.drone import DroneService
 from src.services.environment import EnvironmentService
+from src.services.simulation_drone import SimulationDroneService
 
 router = APIRouter(prefix="/environment", tags=["environment"])
 
@@ -113,7 +113,9 @@ def create_default_drone():
 
         environment = get_environment_instance()
         # Create drone service
-        drone_service = DroneService.create_drone(model=model, location=start_location)
+        drone_service = SimulationDroneService.create_drone(
+            model=model, location=start_location
+        )
 
         environment.drones[drone_service.drone.drone_id] = drone_service
 

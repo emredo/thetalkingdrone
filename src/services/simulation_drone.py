@@ -4,13 +4,6 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
-from src.models.physical_models import (
-    DroneData,
-    DroneModel,
-    DroneState,
-    Location,
-    Obstacle,
-)
 from src.models.exceptions import (
     DroneException,
     DroneNotOperationalException,
@@ -19,10 +12,18 @@ from src.models.exceptions import (
     ObstacleCollisionException,
     OutOfBoundsException,
 )
+from src.models.physical_models import (
+    DroneData,
+    DroneModel,
+    DroneState,
+    Location,
+    Obstacle,
+)
+from src.services.drone_base import DroneServiceBase
 from src.utils.logger import logger
 
 
-class DroneService:
+class SimulationDroneService(DroneServiceBase):
     """Service for managing drone operations and interactions with the environment."""
 
     def __init__(self, drone_data: DroneData):
@@ -38,7 +39,7 @@ class DroneService:
         self._is_running = False
 
         # Start the drone thread
-        self.start_drone_thread()
+        self.start_service()
 
     def set_environment(self, environment):
         self.environment = environment
@@ -49,7 +50,7 @@ class DroneService:
         model: DroneModel,
         location: Location,
         drone_id: Optional[str] = None,
-    ) -> "DroneService":
+    ) -> "SimulationDroneService":
         """Factory method to create a new drone service instance."""
         from src.controller.environment import get_environment_instance
 
@@ -106,7 +107,7 @@ class DroneService:
             if self.drone.fuel_level <= 0:
                 self.drone.state = DroneState.EMERGENCY
 
-    def start_drone_thread(self) -> None:
+    def start_service(self) -> None:
         """Start the drone update thread."""
         if self._is_running:
             logger.warning(f"Drone {self.drone.drone_id} thread is already running")
@@ -118,7 +119,7 @@ class DroneService:
         self._is_running = True
         logger.info(f"Drone {self.drone.drone_id} thread started")
 
-    def stop_drone_thread(self) -> None:
+    def stop_service(self) -> None:
         """Stop the drone update thread."""
         if not self._is_running:
             logger.warning(f"Drone {self.drone.drone_id} thread is not running")
@@ -139,6 +140,7 @@ class DroneService:
             # Small sleep to prevent CPU overuse
             self._stop_event.wait(0.2)  # Update every 200ms
 
+    # Implement ABC methods
     def take_off(self) -> None:
         """Command drone to take off to specified altitude."""
         target_altitude = 1
@@ -431,4 +433,4 @@ class DroneService:
 
     def __del__(self):
         """Destructor to ensure thread is properly cleaned up."""
-        self.stop_drone_thread()
+        self.stop_service()
