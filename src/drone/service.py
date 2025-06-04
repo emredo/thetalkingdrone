@@ -129,7 +129,7 @@ class DroneService:
             self.update()
 
             # Small sleep to prevent CPU overuse
-            self._stop_event.wait(0.1)  # Update every 100ms
+            self._stop_event.wait(0.2)  # Update every 200ms
 
     def take_off(self) -> None:
         """Command drone to take off to specified altitude."""

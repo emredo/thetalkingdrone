@@ -1,5 +1,4 @@
 from typing import List, Tuple
-from pydantic import Field
 
 from src.models.environment import Location, Obstacle
 
@@ -8,71 +7,45 @@ class Settings:
     """Application settings loaded from environment variables."""
 
     # App settings
-    app_name: str = Field(
-        default="The Talking Drone", description="Name of the application"
-    )
-    debug: bool = Field(default=False, description="Debug mode flag")
+    app_name: str = "The Talking Drone"
+    debug: bool = False
 
     # Environment settings
-    boundaries: Tuple[float, float, float] = Field(
-        default=(100.0, 100.0, 50.0), description="Environment boundaries"
-    )
+    boundaries: Tuple[float, float, float] = (100.0, 100.0, 50.0)
     # Environment obstacles
-    environment_obstacles: List[Obstacle] = Field(
-        default=[
-            Obstacle(
-                location=Location(x=70.0, y=50.0, z=0.0),
-                dimensions=(10.0, 10.0, 20.0),
-                name="İTÜ Ayazağa",
-            ),
-            Obstacle(
-                location=Location(x=25.0, y=70.0, z=0.0),
-                dimensions=(10.0, 10.0, 20.0),
-                name="Taksim İlk Yardım",
-            ),
-            Obstacle(
-                location=Location(x=30.0, y=10.0, z=0.0),
-                dimensions=(10.0, 10.0, 20.0),
-                name="Gümüşsuyu",
-            ),
-        ],
-        description="List of obstacles in the environment",
-    )
+    environment_obstacles: List[Obstacle] = [
+        Obstacle(
+            location=Location(x=70.0, y=50.0, z=0.0),
+            dimensions=(10.0, 10.0, 20.0),
+            name="İTÜ Ayazağa",
+        ),
+        Obstacle(
+            location=Location(x=25.0, y=70.0, z=0.0),
+            dimensions=(10.0, 10.0, 20.0),
+            name="Taksim İlk Yardım",
+        ),
+        Obstacle(
+            location=Location(x=30.0, y=10.0, z=0.0),
+            dimensions=(10.0, 10.0, 20.0),
+            name="Gümüşsuyu",
+        ),
+    ]
 
     # Default drone model settings
-    default_drone_name: str = Field(
-        default="Standard Drone", description="Default drone model name"
-    )
-    default_drone_max_speed: float = Field(
-        default=1.0, description="Default drone max speed in m/s"
-    )
-    default_drone_max_altitude: float = Field(
-        default=100.0, description="Default drone max altitude in meters"
-    )
-    default_drone_weight: float = Field(
-        default=1.5, description="Default drone weight in kg"
-    )
-    default_drone_dimensions: tuple = Field(
-        default=(0.5, 0.5, 0.2), description="Default drone dimensions in meters"
-    )
-    default_drone_max_payload: float = Field(
-        default=0.5, description="Default drone max payload in kg"
-    )
-    default_drone_fuel_capacity: float = Field(
-        default=100.0, description="Default drone fuel capacity"
-    )
-    default_drone_fuel_consumption_rate: float = Field(
-        default=1.0, description="Default drone fuel consumption per minute"
-    )
+    default_drone_name: str = "Standard Drone"
+    default_drone_max_speed: float = 1.0
+    default_drone_max_altitude: float = 100.0
+    default_drone_weight: float = 1.5
+    default_drone_dimensions: tuple = (0.5, 0.5, 0.2)
+    default_drone_max_payload: float = 0.5
+    default_drone_fuel_capacity: float = 100.0
+    default_drone_fuel_consumption_rate: float = 1.0
 
     # API settings
-    api_prefix: str = Field(default="/api/v1", description="API route prefix")
+    api_prefix: str = "/api/v1"
 
     # LangChain settings
-    langchain_model: str = Field(
-        default="google_genai:gemini-2.5-flash-preview-05-20",
-        description="LLM model to use for LangChain",
-    )
+    langchain_model: str = "google_genai:gemini-2.5-flash-preview-05-20"
 
     class Config:
         """Pydantic config"""

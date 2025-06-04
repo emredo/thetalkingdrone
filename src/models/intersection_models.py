@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field, validator
 
@@ -57,7 +57,7 @@ class DroneData(BaseModel):
 class EnvironmentState(BaseModel):
     """Model representing the state of the environment."""
 
-    drones: Dict[str, DroneData] = Field(
+    drones: Optional[Dict[str, DroneData]] = Field(
         default_factory=dict, description="Drones in the environment"
     )
     boundaries: Tuple[float, float, float] = Field(
@@ -66,4 +66,4 @@ class EnvironmentState(BaseModel):
     obstacles: List[Obstacle] = Field(
         default_factory=list, description="List of obstacles in the environment"
     )
-    time: float = Field(default=0.0, description="Current simulation time")
+    time: Optional[float] = Field(default=0.0, description="Current simulation time")

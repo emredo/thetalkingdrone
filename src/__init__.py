@@ -118,10 +118,7 @@ def create_app() -> FastAPI:
     )
 
     # Create a global environment instance
-    environment = EnvironmentService(
-        boundaries=Settings.boundaries,
-        obstacles=Settings.environment_obstacles,
-    )
+    environment = EnvironmentService()
 
     # Start the simulation monitor to log simulation time every 10 seconds
     simulation_monitor = get_simulation_monitor(environment)
