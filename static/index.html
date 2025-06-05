@@ -709,22 +709,26 @@
                 const isSelected = drone.drone_id === selectedDroneId;
                 drawDroneIcon(x, y, drone.telemetry.heading, droneColor, isSelected);
 
-                // Display altitude and heading with BIG BLACK TEXT
+                // Display altitude and heading in right upper corner of drone
                 const altText = `${drone.telemetry.position.z.toFixed(1)}m`;
                 const headingText = `${drone.telemetry.heading.toFixed(0)}°`;
                 const displayText = `${altText} | ${headingText}`;
 
-                ctx.font = 'bold 14px Arial';
-                ctx.fillStyle = 'black';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'left';
 
-                // Add white background to ensure text is visible on any background
-                const textWidth = ctx.measureText(displayText).width;
-                ctx.fillStyle = 'white';
-                ctx.fillRect(x + iconSize / 2 + 5, y - 12, textWidth + 6, 24);
+                // Position text at right upper corner of drone
+                const textX = x + iconSize / 2 + 2;
+                const textY = y - iconSize / 2 - 2;
+
+                // Add text stroke for better visibility without background
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.strokeText(displayText, textX, textY);
 
                 // Draw the text
                 ctx.fillStyle = 'black';
-                ctx.fillText(displayText, x + iconSize / 2 + 8, y + 3);
+                ctx.fillText(displayText, textX, textY);
             });
         }
 

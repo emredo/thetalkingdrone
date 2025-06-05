@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from langchain.chat_models import init_chat_model
 from langchain.prompts import PromptTemplate
-from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
@@ -147,11 +147,6 @@ class AutoPilotService:
     def _create_drone_tools(self) -> List[Any]:
         """Create tools from drone service methods."""
 
-        @tool("get_telemetry")
-        def get_telemetry() -> Dict[str, Any]:
-            """Get current drone telemetry including position, fuel level, speed, and state."""
-            return self.drone_service.get_telemetry()
-
         @tool("take_off")
         def take_off() -> str:
             """Command the drone to take off."""
@@ -170,27 +165,59 @@ class AutoPilotService:
             except Exception as e:
                 return f"Landing failed: {str(e)}"
 
-        @tool("move_to")
-        def move_to(x: float, y: float, z: float) -> str:
-            """Command the drone to move to a specific 3D coordinate (x, y, z)."""
+        @tool("turn_body")
+        def turn_body(angle: float) -> str:
+            """Command the drone to turn at yaw in a specific angle in the body frame."""
             try:
-                location = Location(x=x, y=y, z=z)
-                self.drone_service.move_to(location)
-                return f"Drone moving to location ({x}, {y}, {z})"
-            except Exception as e:
-                return f"Move failed: {str(e)}"
-
-        @tool("turn")
-        def turn(angle: float) -> str:
-            """Command the drone to turn at yawin a specific angle."""
-            try:
-                self.drone_service.turn(angle)
+                self.drone_service.turn_global(angle)
                 return f"Drone turning {angle} degrees"
             except Exception as e:
                 return f"Turn failed: {str(e)}"
 
+        @tool("turn_global")
+        def turn_global(angle: float) -> str:
+            """Command the drone to turn at yawin a specific angle."""
+            try:
+                self.drone_service.turn_global(angle)
+                return f"Drone turning {angle} degrees"
+            except Exception as e:
+                return f"Turn failed: {str(e)}"
+
+        @tool("move_to_body")
+        def move_to_body(x: float, y: float, z: float) -> str:
+            """Command the drone to move to a specific 3D coordinate (x, y, z) in the body frame."""
+            try:
+                location = Location(x=x, y=y, z=z)
+                self.drone_service.move_global(location)
+                return f"Drone moving to location ({x}, {y}, {z})"
+            except Exception as e:
+                return f"Move failed: {str(e)}"
+
+        @tool("move_to_global")
+        def move_to_global(x: float, y: float, z: float) -> str:
+            """Command the drone to move to a specific 3D coordinate (x, y, z)."""
+            try:
+                location = Location(x=x, y=y, z=z)
+                self.drone_service.move_global(location)
+                return f"Drone moving to location ({x}, {y}, {z})"
+            except Exception as e:
+                return f"Move failed: {str(e)}"
+
+        @tool("get_telemetry")
+        def get_telemetry() -> Dict[str, Any]:
+            """Get current drone telemetry including position, fuel level, speed, and state."""
+            return self.drone_service.get_telemetry()
+
         # Return the list of tools
-        return [turn, get_telemetry, take_off, land, move_to, turn]
+        return [
+            take_off,
+            land,
+            turn_body,
+            turn_global,
+            move_to_body,
+            move_to_global,
+            get_telemetry,
+        ]
 
     def execute_command(self, command: str) -> Dict[str, Any]:
         """Execute a natural language command via the LangGraph agent."""
@@ -201,7 +228,9 @@ class AutoPilotService:
             # Create a state with the command as a HumanMessage
             self.memory.append(HumanMessage(content=command))
             # Execute the agent with the input state
-            response = self.agent.invoke({"messages": self.memory})
+            response = self.agent.invoke(
+                {"messages": self.memory}, {"recursion_limit": 50}
+            )
             self.memory = response.get("messages", [])
             return {"status": "success", "result": self.memory[-1].content}
         except Exception as e:

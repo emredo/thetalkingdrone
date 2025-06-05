@@ -117,7 +117,7 @@ def move_to(
 ) -> Dict[str, str]:
     """Command drone to move to the specified location."""
     try:
-        drone_service.move_to(target)
+        drone_service.move_global(target)
         return {
             "status": "success",
             "message": f"Moving to location ({target.x}, {target.y}, {target.z})",
@@ -136,7 +136,7 @@ def turn(
 ) -> Dict[str, str]:
     """Command drone to turn to the specified angle."""
     try:
-        drone_service.turn(request.angle)
+        drone_service.turn_global(request.angle)
         return {"status": "success", "message": f"Turning to {request.angle} degrees"}
     except (DroneException, OutOfBoundsException) as e:
         logger.error(

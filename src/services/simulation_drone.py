@@ -309,7 +309,7 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.state = DroneState.EMERGENCY
             raise DroneException(f"Landing failed: Unexpected error: {str(e)}")
 
-    def move_to(self, target_location: Location) -> None:
+    def move_global(self, target_location: Location) -> None:
         """Command drone to move to a target location."""
         if self.drone.state != DroneState.FLYING:
             raise DroneNotOperationalException(
@@ -386,7 +386,7 @@ class SimulationDroneService(DroneServiceBase):
     def get_telemetry(self) -> Telemetry:
         return self.drone.telemetry
 
-    def turn(self, angle: float) -> None:
+    def turn_global(self, heading: float) -> None:
         """Command drone to turn to a target heading angle."""
         if self.drone.state != DroneState.FLYING:
             raise DroneNotOperationalException(
@@ -394,7 +394,7 @@ class SimulationDroneService(DroneServiceBase):
             )
 
         # Normalize target angle to [0, 360) range
-        target_angle = angle % 360
+        target_angle = heading % 360
         current_angle = self.drone.telemetry.heading % 360
 
         # Calculate the shortest rotation to reach target angle
@@ -474,3 +474,22 @@ class SimulationDroneService(DroneServiceBase):
         except Exception as e:
             self.drone.state = DroneState.EMERGENCY
             raise DroneException(f"Turn failed: Unexpected error: {str(e)}")
+
+    def turn_body(self, angle: float) -> None:
+        """Command drone to turn at yaw in a specific angle in the body frame."""
+        if self.drone.state != DroneState.FLYING:
+            raise DroneNotOperationalException(
+                f"Cannot turn in {self.drone.state} state"
+            )
+
+        target_angle = self.drone.telemetry.heading + angle
+        self.turn_global(target_angle)
+
+    def move_body(self, x: float, y: float, z: float) -> None:
+        """Command drone to move in the body frame."""
+        target_location = Location(
+            x=self.drone.telemetry.position.x + x,
+            y=self.drone.telemetry.position.y + y,
+            z=self.drone.telemetry.position.z + z,
+        )
+        self.move_global(target_location)

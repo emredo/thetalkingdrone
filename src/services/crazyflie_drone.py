@@ -170,7 +170,7 @@ class CrazyFlieService(DroneServiceBase):
             self._telemetry_data["state"] = "error"
             raise RuntimeError(f"Landing failed: {e}")
 
-    def move_to(
+    def move_global(
         self, target_location: Location, duration: float = 3.0, yaw: float = 0.0
     ) -> None:
         if not self._is_connected or not self._scf:
@@ -257,7 +257,7 @@ class CrazyFlieService(DroneServiceBase):
 
         return self._telemetry_data
 
-    def turn(self, angle: float) -> None:
+    def turn_global(self, angle: float) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")
         if not self._is_running:  # Added check
@@ -265,3 +265,21 @@ class CrazyFlieService(DroneServiceBase):
             raise RuntimeError("Service not running, cannot turn.")
 
         logger.info(f"Commanding drone to turn {angle} degrees")
+
+    def turn_body(self, angle: float) -> None:
+        if not self._is_connected or not self._scf:
+            raise ConnectionError("Crazyflie not connected.")
+        if not self._is_running:  # Added check
+            logger.warning("Cannot turn, service not running.")  # Added log
+            raise RuntimeError("Service not running, cannot turn.")
+
+        logger.info(f"Commanding drone to turn {angle} degrees")
+
+    def move_body(self, x: float, y: float, z: float) -> None:
+        if not self._is_connected or not self._scf:
+            raise ConnectionError("Crazyflie not connected.")
+        if not self._is_running:  # Added check
+            logger.warning("Cannot move, service not running.")  # Added log
+            raise RuntimeError("Service not running, cannot move.")
+
+        logger.info(f"Commanding drone to move {x}, {y}, {z}")

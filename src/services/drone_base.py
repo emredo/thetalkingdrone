@@ -94,7 +94,7 @@ class DroneServiceBase(ABC):
         pass
 
     @abstractmethod
-    def move_to(self, target_location: Location) -> None:
+    def move_global(self, target_location: Location) -> None:
         """Command drone to move to a target location."""
         pass
 
@@ -104,6 +104,16 @@ class DroneServiceBase(ABC):
         pass
 
     @abstractmethod
-    def turn(self, angle: float) -> None:
+    def turn_global(self, heading: float) -> None:
         """Command drone to turn at yaw in a specific angle."""
+        pass
+
+    @abstractmethod
+    def turn_body(self, angle: float) -> None:
+        """Command drone to turn at yaw in a specific angle in the body frame."""
+        pass
+
+    @abstractmethod
+    def move_body(self, x: float, y: float, z: float) -> None:
+        """Command drone to move in the body frame."""
         pass
