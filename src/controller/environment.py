@@ -67,6 +67,7 @@ def restart_simulation():
 
         # Clear all drone instances
         environment.drones.clear()
+        environment.autopilot_agents.clear()
 
         return {
             "status": "success",

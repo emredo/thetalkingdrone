@@ -387,25 +387,32 @@ class SimulationDroneService(DroneServiceBase):
         return self.drone.telemetry
 
     def turn(self, angle: float) -> None:
-        """Command drone to turn at yaw in a specific angle."""
+        """Command drone to turn to a target heading angle."""
         if self.drone.state != DroneState.FLYING:
             raise DroneNotOperationalException(
                 f"Cannot turn in {self.drone.state} state"
             )
 
-        # Normalize angle to [-180, 180] range
-        angle = angle % 360
-        if angle > 180:
-            angle -= 360
-        elif angle < -180:
-            angle += 360
+        # Normalize target angle to [0, 360) range
+        target_angle = angle % 360
+        current_angle = self.drone.telemetry.heading % 360
 
-        # If angle is essentially zero, no need to turn
-        if abs(angle) < 0.1:
+        # Calculate the shortest rotation to reach target angle
+        # This handles crossing the 0/360 boundary correctly
+        angle_diff = target_angle - current_angle
+
+        # Normalize the difference to [-180, 180] to get shortest path
+        if angle_diff > 180:
+            angle_diff -= 360
+        elif angle_diff < -180:
+            angle_diff += 360
+
+        # If angle difference is essentially zero, no need to turn
+        if abs(angle_diff) < 0.1:
             return
 
         # Calculate time to complete turn based on max yaw rate
-        turn_time = abs(angle) / self.drone.model.max_yaw_rate  # Time in seconds
+        turn_time = abs(angle_diff) / self.drone.model.max_yaw_rate  # Time in seconds
 
         # Calculate fuel required for turn
         estimated_time_minutes = turn_time / 60
@@ -424,7 +431,7 @@ class SimulationDroneService(DroneServiceBase):
             num_steps = 1  # Ensure at least one step
 
         # Calculate step size for heading change
-        dheading = angle / num_steps
+        dheading = angle_diff / num_steps
 
         try:
             # Turn the drone step by step
@@ -457,11 +464,10 @@ class SimulationDroneService(DroneServiceBase):
                 time.sleep(update_interval)
 
             # Ensure we reach exactly the target heading
-            final_heading = (self.drone.telemetry.heading + angle) % 360
             final_telemetry = Telemetry(
                 position=self.drone.telemetry.position,
                 speed=self.drone.telemetry.speed,
-                heading=final_heading,
+                heading=target_angle,
             )
             self.drone.telemetry = final_telemetry
 

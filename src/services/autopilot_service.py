@@ -1,9 +1,8 @@
 from typing import Any, Dict, List
 
 from langchain.chat_models import init_chat_model
-from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
@@ -72,7 +71,9 @@ You have access to the following drone control tools:
 ## CURRENT STATUS
 {telemetry}
 
-You are ready to accept natural language flight commands and queries about the drone or environment."""
+## BUILDINGS
+{buildings}
+"""
 
 
 class AutoPilotService:
@@ -93,9 +94,7 @@ class AutoPilotService:
         try:
             self.drone_service = drone_service
             # Set up memory
-            self.memory = ConversationBufferMemory(
-                memory_key="chat_history", return_messages=True
-            )
+            self.memory: List[BaseMessage] = []
             self.agent = create_react_agent(
                 model=init_chat_model(
                     model=Settings.langchain_model,
@@ -111,6 +110,20 @@ class AutoPilotService:
         except Exception as e:
             raise InvalidCommandException(f"Failed to create agent: {str(e)}")
 
+    def _create_chat_history(self) -> str:
+        """Create the chat history."""
+        chat_history = ""
+        for message in self.memory:
+            if isinstance(message, HumanMessage):
+                chat_history += f"Human: {message.content}\n"
+            elif (
+                isinstance(message, AIMessage)
+                and message.content != ""
+                and message.tool_calls is None
+            ):
+                chat_history += f"AI: {message.content}\n"
+        return chat_history
+
     def _prepare_prompt(self) -> str:
         """Prepare the prompt for the agent."""
         prompt = PromptTemplate(
@@ -120,7 +133,10 @@ class AutoPilotService:
         buildings: List[BuildingInformation] = (
             self.drone_service.environment.features.buildings
         )
-        buildings_str = "\n".join([str(building.model_dump()) for building in buildings])
+        buildings_str = "\n".join(
+            [str(building.model_dump()) for building in buildings]
+        )
+        # chat_history = self._create_chat_history()
         prepared_prompt = prompt.format(
             telemetry=self.drone_service.get_telemetry(),
             buildings=buildings_str,
@@ -183,21 +199,10 @@ class AutoPilotService:
 
         try:
             # Create a state with the command as a HumanMessage
-            input_state = {"messages": [HumanMessage(content=command)]}
-
+            self.memory.append(HumanMessage(content=command))
             # Execute the agent with the input state
-            response = self.agent.invoke(input_state)
-
-            return_str = ""
-            ct = 0
-            for message in response.get("messages", []):
-                if isinstance(message, AIMessage) and message.content != "":
-                    content = (
-                        message.content if message.content != "" else "No response"
-                    )
-                    return_str += f"\n-----{ct}-----\n{content}"
-                    ct += 1
-
-            return {"status": "success", "result": return_str}
+            response = self.agent.invoke({"messages": self.memory})
+            self.memory = response.get("messages", [])
+            return {"status": "success", "result": self.memory[-1].content}
         except Exception as e:
             raise InvalidCommandException(f"Failed to execute command: {str(e)}")
