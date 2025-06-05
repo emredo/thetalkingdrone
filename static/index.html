@@ -466,7 +466,7 @@
 
             // Rotate based on heading (convert degrees to radians)
             // Note: SVG icon points upward by default, so we rotate from that orientation
-            const rotationRadians = (heading + 90) * Math.PI / 180; // +90 to align with "north" being up
+            const rotationRadians = (heading + 180) * Math.PI / 180; // +90 to align with "north" being up
             ctx.rotate(rotationRadians);
 
             // Apply color tint by using composite operations
@@ -596,7 +596,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`/autopilot/${selectedDroneId}/takeoff`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/takeoff/`, {
                     method: 'POST'
                 });
 
@@ -617,7 +617,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`/autopilot/${selectedDroneId}/land`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/land/`, {
                     method: 'POST'
                 });
 
