@@ -35,52 +35,45 @@ Current Telemetry Data: {telemetry}
 """
 
 
-class AutoPilotAgent:
+class AutoPilotService:
     """AutoPilot agent implementation using Gemini 2.5 Pro with LangGraph."""
+
+    @classmethod
+    def create_autopilot_service(
+        cls, drone_service: SimulationDroneService
+    ) -> "AutoPilotService":
+        """Create an autopilot service for a drone."""
+        return cls(drone_service)
 
     def __init__(self, drone_service: SimulationDroneService):
         """Initialize the Gemini autopilot agent."""
-        self.drone_service = drone_service
-        self.tools = []
-        self.llm = None
-        self.memory = None
-        self.agent = None
-        self.is_initialized = False
-
-    def _prepare_prompt(self) -> str:
-        """Prepare the prompt for the agent."""
-        return SYSTEM_PROMPT.format(telemetry=self.drone_service.get_telemetry())
-
-    def setup_agent(self) -> None:
-        """Setup the LangGraph agent with Gemini 2.5 Pro and tools for drone control."""
-
-        # Initialize the LLM
         from src.config.settings import Settings
-
-        self.llm = init_chat_model(
-            model=Settings.langchain_model,
-            max_tokens=1000,
-            max_retries=3,
-            temperature=0.2,
-            google_api_key=GOOGLE_API_KEY,
-        )
-
-        # Create tools from drone service methods
-        self.tools = self._create_drone_tools()
-
-        # Set up memory
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True
-        )
 
         # Create the LangGraph agent using ReAct agent
         try:
+            self.drone_service = drone_service
+            # Set up memory
+            self.memory = ConversationBufferMemory(
+                memory_key="chat_history", return_messages=True
+            )
             self.agent = create_react_agent(
-                model=self.llm, tools=self.tools, prompt=self._prepare_prompt()
+                model=init_chat_model(
+                    model=Settings.langchain_model,
+                    max_tokens=1000,
+                    max_retries=3,
+                    temperature=0.2,
+                    google_api_key=GOOGLE_API_KEY,
+                ),
+                tools=self._create_drone_tools(),
+                prompt=self._prepare_prompt(),
             )
             self.is_initialized = True
         except Exception as e:
             raise InvalidCommandException(f"Failed to create agent: {str(e)}")
+
+    def _prepare_prompt(self) -> str:
+        """Prepare the prompt for the agent."""
+        return SYSTEM_PROMPT.format(telemetry=self.drone_service.get_telemetry())
 
     def _create_drone_tools(self) -> List[Any]:
         """Create tools from drone service methods."""
@@ -135,9 +128,7 @@ class AutoPilotAgent:
     def execute_command(self, command: str) -> Dict[str, Any]:
         """Execute a natural language command via the LangGraph agent."""
         if not self.is_initialized:
-            raise AgentNotInitializedException(
-                "Agent not initialized. Call setup_agent() first."
-            )
+            raise AgentNotInitializedException("Agent not initialized. Call first.")
 
         try:
             # Create a state with the command as a HumanMessage
@@ -149,7 +140,10 @@ class AutoPilotAgent:
             return_str = ""
             for message in response.get("messages", []):
                 if isinstance(message, AIMessage):
-                    return_str += f"\n-----------\n{message.content}"
+                    content = (
+                        message.content if message.content != "" else "No response"
+                    )
+                    return_str += f"\n-----------\n{content}"
 
             return {"status": "success", "result": return_str}
         except Exception as e:

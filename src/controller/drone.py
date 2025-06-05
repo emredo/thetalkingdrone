@@ -16,7 +16,7 @@ def get_drone_service(drone_id: str) -> SimulationDroneService:
     return environment.drones[drone_id]
 
 
-@router.get("/{drone_id}/details", response_model=DroneData)
+@router.get("/{drone_id}/details/", response_model=DroneData)
 def get_drone_details(
     drone_service: SimulationDroneService = Depends(get_drone_service),
 ):

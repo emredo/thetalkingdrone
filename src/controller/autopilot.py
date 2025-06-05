@@ -3,8 +3,8 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from src.autopilot.agent import AutoPilotAgent
 from src.controller.drone import get_drone_service
+from src.controller.environment import get_environment_instance
 from src.models import (
     AgentNotInitializedException,
     AutopilotException,
@@ -12,13 +12,12 @@ from src.models import (
     OutOfBoundsException,
 )
 from src.models.physical_models import Location
+from src.services.autopilot_service import AutoPilotService
+from src.services.environment import EnvironmentService
 from src.services.simulation_drone import SimulationDroneService
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/autopilot", tags=["autopilot"])
-
-# In-memory store for autopilot agents
-_autopilot_agents: Dict[str, AutoPilotAgent] = {}
 
 
 class CommandInput(BaseModel):
@@ -27,55 +26,29 @@ class CommandInput(BaseModel):
     command: str
 
 
-def get_autopilot_agent(drone_id: str) -> AutoPilotAgent:
-    """Dependency to get autopilot agent for a specific drone."""
-    if drone_id not in _autopilot_agents:
+def get_autopilot_service(drone_id: str) -> AutoPilotService:
+    from src.controller.environment import get_environment_instance
+
+    environment = get_environment_instance()
+    if drone_id not in environment.autopilot_agents:
         raise HTTPException(
             status_code=404, detail=f"No autopilot agent found for drone {drone_id}"
         )
-    return _autopilot_agents[drone_id]
+    return environment.autopilot_agents[drone_id]
 
 
-@router.post("/{drone_id}/initialize")
-def initialize_autopilot(
-    drone_service: SimulationDroneService = Depends(get_drone_service),
-) -> Dict[str, str]:
-    """Initialize autopilot agent for a drone."""
-    drone_id = drone_service.drone.drone_id
-
-    # Check if agent already exists
-    if drone_id in _autopilot_agents:
-        return {
-            "status": "success",
-            "message": f"Autopilot agent already initialized for drone {drone_id}",
-        }
-
-    # Create and initialize the agent
-    try:
-        agent = AutoPilotAgent(drone_service)
-        agent.setup_agent()
-        _autopilot_agents[drone_id] = agent
-
-        return {
-            "status": "success",
-            "message": f"Autopilot agent initialized for drone {drone_id}",
-        }
-    except Exception as e:
-        logger.error(
-            f"Failed to initialize autopilot agent for drone {drone_id}: {str(e)}"
-        )
-        raise HTTPException(
-            status_code=500, detail=f"Failed to initialize autopilot agent: {str(e)}"
-        )
-
-
-@router.post("/{drone_id}/command")
+@router.post("/{drone_id}/command/")
 def execute_command(
     command_input: CommandInput,
     drone_id: str,
-    agent: AutoPilotAgent = Depends(get_autopilot_agent),
+    environment: EnvironmentService = Depends(get_environment_instance),
 ) -> Dict[str, Any]:
     """Execute a natural language command via the autopilot agent."""
+    if drone_id not in environment.autopilot_agents:
+        raise HTTPException(
+            status_code=404, detail=f"No autopilot agent found for drone {drone_id}"
+        )
+    agent = environment.autopilot_agents[drone_id]
     try:
         result = agent.execute_command(command_input.command)
         return result
@@ -99,7 +72,7 @@ def execute_command(
         )
 
 
-@router.post("/{drone_id}/takeoff")
+@router.post("/{drone_id}/takeoff/")
 def take_off(
     drone_service: SimulationDroneService = Depends(get_drone_service),
 ) -> Dict[str, str]:
@@ -117,7 +90,7 @@ def take_off(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{drone_id}/land")
+@router.post("/{drone_id}/land/")
 def land(
     drone_service: SimulationDroneService = Depends(get_drone_service),
 ) -> Dict[str, str]:
@@ -132,7 +105,7 @@ def land(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{drone_id}/move")
+@router.post("/{drone_id}/move/")
 def move_to(
     target: Location, drone_service: SimulationDroneService = Depends(get_drone_service)
 ) -> Dict[str, str]:

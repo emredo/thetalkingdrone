@@ -11,6 +11,7 @@ from src.models.physical_models import (
     Telemetry,
 )
 from src.services.drone_base import DroneServiceBase
+from src.services.autopilot_service import AutoPilotService
 from src.utils.logger import logger
 
 
@@ -26,6 +27,7 @@ class EnvironmentService:
             boundaries=Settings.boundaries,
             buildings=Settings.buildings,
         )
+        self.autopilot_agents: Dict[str, AutoPilotService] = {}
         self.drones: Dict[str, DroneServiceBase] = {}
         self.time = 0.0
         self._last_update_time = time.time()

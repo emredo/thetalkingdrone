@@ -346,7 +346,7 @@
         // Fetch environment data
         async function fetchData() {
             try {
-                const response = await fetch("/environment/state");
+                const response = await fetch("/environment/state/");
                 if (!response.ok) throw new Error('Failed to fetch environment data');
 
                 environmentData = await response.json();
@@ -430,7 +430,7 @@
         // Restart the simulation
         async function restartSimulation() {
             try {
-                const response = await fetch("/environment/restart-simulation", {
+                const response = await fetch("/environment/restart-simulation/", {
                     method: 'POST'
                 });
 
@@ -582,7 +582,7 @@
                 ctx.fillStyle = 'gray';
                 const x = building.location.x * scaleX;
                 const y = building.location.y * scaleY;
-                const radius = 0.10 * scaleX; // Use a fixed radius of 0.10m
+                const radius = 0.05 * scaleX; // Use a fixed radius of 0.10m
 
                 ctx.beginPath();
                 ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -844,8 +844,8 @@
 
                 // Determine the endpoint based on drone type
                 const endpoint = droneType === 'simulation'
-                    ? "/environment/create-simulation-drone"
-                    : "/environment/create-crazyflie-drone";
+                    ? "/environment/create-simulation-drone/"
+                    : "/environment/create-crazyflie-drone/";
 
                 const response = await fetch(endpoint, {
                     method: 'POST',

@@ -8,6 +8,7 @@ from src.models.physical_models import DroneModel, DroneType, Location, Telemetr
 from src.services.crazyflie_drone import CrazyFlieService
 from src.services.environment import EnvironmentService
 from src.services.simulation_drone import SimulationDroneService
+from src.services.autopilot_service import AutoPilotService
 
 router = APIRouter(prefix="/environment", tags=["environment"])
 
@@ -37,7 +38,7 @@ def set_environment_instance(environment: EnvironmentService) -> None:
     _environment_instance = environment
 
 
-@router.get("/state")
+@router.get("/state/")
 def get_environment_state(
     environment: EnvironmentService = Depends(get_environment_instance),
 ) -> Dict[str, Any]:
@@ -56,7 +57,7 @@ def get_environment_state(
     return {"environment": env_state, "drones": drones}
 
 
-@router.post("/restart-simulation")
+@router.post("/restart-simulation/")
 def restart_simulation():
     """Restart the entire simulation from zero."""
     try:
@@ -78,7 +79,7 @@ def restart_simulation():
 
 
 # Add example endpoint to create a default drone
-@router.post("/create-simulation-drone", response_model=str)
+@router.post("/create-simulation-drone/", response_model=str)
 def create_default_simulation_drone(
     request: CreateDroneRequest,
 ):
@@ -111,8 +112,9 @@ def create_default_simulation_drone(
         drone_service: SimulationDroneService = SimulationDroneService.create_drone(
             model=model, telemetry=telemetry, drone_id=drone_id
         )
-
+        autopilot_service = AutoPilotService.create_autopilot_service(drone_service)
         environment.drones[drone_service.drone.drone_id] = drone_service
+        environment.autopilot_agents[drone_service.drone.drone_id] = autopilot_service
 
         return drone_service.drone.drone_id
 
@@ -120,7 +122,7 @@ def create_default_simulation_drone(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/create-crazyflie-drone", response_model=str)
+@router.post("/create-crazyflie-drone/", response_model=str)
 def create_crazyflie_drone(
     request: CreateDroneRequest,
 ):
@@ -148,8 +150,9 @@ def create_crazyflie_drone(
         drone_service: CrazyFlieService = CrazyFlieService.create_drone(
             model=model, telemetry=telemetry, drone_id=drone_id
         )
-
+        autopilot_service = AutoPilotService.create_autopilot_service(drone_service)
         environment.drones[drone_service.drone.drone_id] = drone_service
+        environment.autopilot_agents[drone_service.drone.drone_id] = autopilot_service
 
         return drone_service.drone.drone_id
     except Exception as e:
