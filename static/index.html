@@ -546,13 +546,13 @@
 
             // Update state badge
             const stateElem = document.getElementById('droneState');
-            stateElem.textContent = droneDetailData.state.toUpperCase();
+            stateElem.textContent = droneDetailData.telemetry.state.toUpperCase();
 
             // Remove all badge classes
             stateElem.classList.remove('badge-idle', 'badge-flying', 'badge-takingoff', 'badge-landing', 'badge-emergency');
 
             // Add appropriate badge class
-            switch (droneDetailData.state) {
+            switch (droneDetailData.telemetry.state) {
                 case 'IDLE': stateElem.classList.add('badge-idle'); break;
                 case 'FLYING': stateElem.classList.add('badge-flying'); break;
                 case 'TAKING_OFF': stateElem.classList.add('badge-takingoff'); break;
