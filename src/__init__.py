@@ -40,7 +40,7 @@ def create_app() -> FastAPI:
 
         # Skip logging for /environment/state endpoint to reduce noise
         should_log = not (
-            request.method == "GET" and request.url.path == "/environment/state"
+            request.method == "GET" and request.url.path == "/environment/state/"
         )
 
         # Log the request only if not filtered

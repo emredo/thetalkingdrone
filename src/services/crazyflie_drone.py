@@ -256,3 +256,12 @@ class CrazyFlieService(DroneServiceBase):
         self._telemetry_data["timestamp"] = time.time()
 
         return self._telemetry_data
+
+    def turn(self, angle: float) -> None:
+        if not self._is_connected or not self._scf:
+            raise ConnectionError("Crazyflie not connected.")
+        if not self._is_running:  # Added check
+            logger.warning("Cannot turn, service not running.")  # Added log
+            raise RuntimeError("Service not running, cannot turn.")
+
+        logger.info(f"Commanding drone to turn {angle} degrees")

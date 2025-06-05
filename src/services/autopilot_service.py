@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 from langchain.chat_models import init_chat_model
 from langchain.memory import ConversationBufferMemory
+from langchain.prompts import PromptTemplate
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
@@ -12,27 +13,66 @@ from src.models import (
     InvalidCommandException,
 )
 from src.models.physical_models import BuildingInformation, Location
-from src.services.simulation_drone import SimulationDroneService
+from src.services.drone_base import DroneServiceBase
 
-SYSTEM_PROMPT = """You are an advanced drone autopilot assistant. Your purpose is to interpret natural language commands and translate them into precise drone operations. You have direct control over the drone through specialized tools.
+SYSTEM_PROMPT = """You are an intelligent drone autopilot agent designed to interpret natural language commands and execute precise drone operations in a simulated environment. You have complete control over a simulation drone through a comprehensive set of specialized tools.
 
-Guidelines for operation:
-1. Safety is your highest priority - evaluate commands for potential risks before execution
-2. Check current state before acting - use get_telemetry to understand the drone's current status
-3. Execute commands efficiently - break complex tasks into logical sequences of actions
-4. Provide clear feedback about each action taken and the drone's current status
-5. When navigating to coordinates, confirm the path is clear of obstacles
+## YOUR MISSION
+You serve as the bridge between human operators and drone hardware, translating conversational commands into safe, efficient flight operations. Your responses should be professional, informative, and always prioritize safety.
 
-When executing commands, think about:
-- The current state of the drone (is it FLYING, TAKING_OFF, LANDING, etc.?)
-- The necessary sequence of operations (take off before moving, etc.)
-- Required parameters (altitude, coordinates)
-- Safety checks at each step
+## AVAILABLE CAPABILITIES
+You have access to the following drone control tools:
 
-Use the tools to respond to user queries about the drone or to control the drone.
+1. **get_telemetry()** - Retrieve real-time drone status including:
+   - Current 3D position (x, y, z coordinates)
+   - Flight state (GROUNDED, TAKING_OFF, FLYING, LANDING, etc.)
+   - Fuel/battery level
+   - Speed and velocity vectors
+   - System health indicators
 
-Current Telemetry Data: {telemetry}
-"""
+2. **take_off()** - Command drone to launch from ground to 1-meter altitude
+   - Only works when drone is GROUNDED
+   - Automatically sets altitude to 1 meter for safety
+
+3. **land()** - Command drone to descend and land at current location
+   - Can be executed from any flying state
+   - Drone will automatically navigate to ground level
+
+4. **move_to(x, y, z)** - Navigate drone to specific 3D coordinates
+   - Requires drone to be in FLYING state (take off first if grounded)
+   - Parameters: x (east-west), y (north-south), z (altitude in meters)
+   - Always validate coordinates are reasonable and safe
+
+5. **get_buildings()** - Query environment for building information
+   - Returns list of all structures with positions and dimensions
+   - Use this for obstacle avoidance and navigation planning
+
+## OPERATIONAL PROTOCOLS
+
+**Safety First:**
+- Always check current telemetry before executing movement commands
+- Ensure drone is in appropriate state for requested operation
+- Validate coordinates are within safe operational boundaries
+- Consider obstacle avoidance using building information
+
+**Command Execution Sequence:**
+1. Assess current drone state via telemetry
+2. Determine required sequence of operations
+3. Execute commands in logical order (e.g., take off before movement)
+4. Provide clear status updates after each action
+5. Confirm successful completion or report any issues
+
+**Response Guidelines:**
+- Be conversational but professional
+- Explain what you're doing and why
+- Report current status after actions
+- If commands fail, explain the issue and suggest alternatives
+- For complex operations, break them into clear steps
+
+## CURRENT STATUS
+{telemetry}
+
+You are ready to accept natural language flight commands and queries about the drone or environment."""
 
 
 class AutoPilotService:
@@ -40,12 +80,12 @@ class AutoPilotService:
 
     @classmethod
     def create_autopilot_service(
-        cls, drone_service: SimulationDroneService
+        cls, drone_service: DroneServiceBase
     ) -> "AutoPilotService":
         """Create an autopilot service for a drone."""
         return cls(drone_service)
 
-    def __init__(self, drone_service: SimulationDroneService):
+    def __init__(self, drone_service: DroneServiceBase):
         """Initialize the Gemini autopilot agent."""
         from src.config.settings import Settings
 
@@ -73,7 +113,20 @@ class AutoPilotService:
 
     def _prepare_prompt(self) -> str:
         """Prepare the prompt for the agent."""
-        return SYSTEM_PROMPT.format(telemetry=self.drone_service.get_telemetry())
+        prompt = PromptTemplate(
+            template=SYSTEM_PROMPT,
+            input_variables=["telemetry", "buildings"],
+        )
+        buildings: List[BuildingInformation] = (
+            self.drone_service.environment.features.buildings
+        )
+        buildings_str = "\n".join([building.model_dump() for building in buildings])
+        prepared_prompt = prompt.format(
+            telemetry=self.drone_service.get_telemetry(),
+            buildings=buildings_str,
+        )
+
+        return prepared_prompt
 
     def _create_drone_tools(self) -> List[Any]:
         """Create tools from drone service methods."""
@@ -111,19 +164,17 @@ class AutoPilotService:
             except Exception as e:
                 return f"Move failed: {str(e)}"
 
-        @tool("get_buildings")
-        def get_buildings() -> List[BuildingInformation]:
-            """Get the list of buildings in the environment."""
+        @tool("turn")
+        def turn(angle: float) -> str:
+            """Command the drone to turn at yawin a specific angle."""
             try:
-                from src.controller.environment import get_environment_instance
-
-                environment = get_environment_instance()
-                return environment.features.buildings if environment else []
+                self.drone_service.turn(angle)
+                return f"Drone turning {angle} degrees"
             except Exception as e:
-                raise RuntimeError(f"Failed to get buildings: {str(e)}")
+                return f"Turn failed: {str(e)}"
 
         # Return the list of tools
-        return [get_telemetry, take_off, land, move_to, get_buildings]
+        return [turn, get_telemetry, take_off, land, move_to, turn]
 
     def execute_command(self, command: str) -> Dict[str, Any]:
         """Execute a natural language command via the LangGraph agent."""

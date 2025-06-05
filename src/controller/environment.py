@@ -92,6 +92,7 @@ def create_default_simulation_drone(
         model = DroneModel(
             name=request.name,
             max_speed=Settings.default_drone_max_speed,
+            max_yaw_rate=Settings.default_drone_max_yaw_rate,
             max_altitude=Settings.default_drone_max_altitude,
             weight=Settings.default_drone_weight,
             dimensions=Settings.default_drone_dimensions,
@@ -134,6 +135,7 @@ def create_crazyflie_drone(
         model = DroneModel(
             name=request.name,
             max_speed=Settings.default_drone_max_speed,
+            max_yaw_rate=Settings.default_drone_max_yaw_rate,
             max_altitude=Settings.default_drone_max_altitude,
             weight=Settings.default_drone_weight,
             dimensions=Settings.default_drone_dimensions,

@@ -385,3 +385,86 @@ class SimulationDroneService(DroneServiceBase):
 
     def get_telemetry(self) -> Telemetry:
         return self.drone.telemetry
+
+    def turn(self, angle: float) -> None:
+        """Command drone to turn at yaw in a specific angle."""
+        if self.drone.state != DroneState.FLYING:
+            raise DroneNotOperationalException(
+                f"Cannot turn in {self.drone.state} state"
+            )
+
+        # Normalize angle to [-180, 180] range
+        angle = angle % 360
+        if angle > 180:
+            angle -= 360
+        elif angle < -180:
+            angle += 360
+
+        # If angle is essentially zero, no need to turn
+        if abs(angle) < 0.1:
+            return
+
+        # Calculate time to complete turn based on max yaw rate
+        turn_time = abs(angle) / self.drone.model.max_yaw_rate  # Time in seconds
+
+        # Calculate fuel required for turn
+        estimated_time_minutes = turn_time / 60
+        fuel_required = estimated_time_minutes * self.drone.model.fuel_consumption_rate
+
+        if self.drone.fuel_level < fuel_required:
+            raise InsufficientFuelException(
+                f"Insufficient fuel for turn: required {fuel_required}, available {self.drone.fuel_level}"
+            )
+
+        # Calculate the number of steps based on a reasonable update interval
+        update_interval = 0.1  # seconds
+        num_steps = int(turn_time / update_interval)
+
+        if num_steps < 1:
+            num_steps = 1  # Ensure at least one step
+
+        # Calculate step size for heading change
+        dheading = angle / num_steps
+
+        try:
+            # Turn the drone step by step
+            for step in range(num_steps):
+                if self.drone.fuel_level <= 0 or self.drone.state != DroneState.FLYING:
+                    break
+
+                # Update drone heading
+                new_heading = self.drone.telemetry.heading + dheading
+
+                # Normalize heading to [0, 360) range
+                new_heading = new_heading % 360
+
+                # Update telemetry with new heading
+                new_telemetry = Telemetry(
+                    position=self.drone.telemetry.position,
+                    speed=self.drone.telemetry.speed,
+                    heading=new_heading,
+                )
+
+                self.drone.telemetry = new_telemetry
+
+                # Consume fuel for this step
+                step_fuel_consumption = (
+                    update_interval / 60
+                ) * self.drone.model.fuel_consumption_rate
+                self.drone.fuel_level -= step_fuel_consumption
+
+                # Sleep for the update interval
+                time.sleep(update_interval)
+
+            # Ensure we reach exactly the target heading
+            final_heading = (self.drone.telemetry.heading + angle) % 360
+            final_telemetry = Telemetry(
+                position=self.drone.telemetry.position,
+                speed=self.drone.telemetry.speed,
+                heading=final_heading,
+            )
+            self.drone.telemetry = final_telemetry
+
+        except Exception as e:
+            self.drone.state = DroneState.EMERGENCY
+            raise DroneException(f"Turn failed: Unexpected error: {str(e)}")

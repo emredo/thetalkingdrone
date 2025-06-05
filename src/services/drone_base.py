@@ -102,3 +102,8 @@ class DroneServiceBase(ABC):
     def get_telemetry(self) -> Telemetry:
         """Get current drone telemetry data."""
         pass
+
+    @abstractmethod
+    def turn(self, angle: float) -> None:
+        """Command drone to turn at yaw in a specific angle."""
+        pass
