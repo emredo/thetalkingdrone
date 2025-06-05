@@ -38,19 +38,19 @@ class SimulationDroneService(DroneServiceBase):
         self._last_update_time = current_time
 
         # Consume fuel when drone is not idle
-        if self.drone.state != DroneState.IDLE:
+        if self.drone.telemetry.state != DroneState.IDLE:
             # Calculate fuel consumption based on state
             fuel_consumption_factor = 1.0  # Default factor
 
-            if self.drone.state == DroneState.FLYING:
+            if self.drone.telemetry.state == DroneState.FLYING:
                 # Higher consumption when flying based on current speed
                 speed_factor = self.drone.telemetry.speed / self.drone.model.max_speed
                 fuel_consumption_factor = 1.0 + (
                     speed_factor * 0.5
                 )  # Up to 50% more consumption at max speed
-            elif self.drone.state == DroneState.TAKING_OFF:
+            elif self.drone.telemetry.state == DroneState.TAKING_OFF:
                 fuel_consumption_factor = 1.2  # 20% more consumption during takeoff
-            elif self.drone.state == DroneState.LANDING:
+            elif self.drone.telemetry.state == DroneState.LANDING:
                 fuel_consumption_factor = 1.1  # 10% more consumption during landing
 
             fuel_consumed = (
@@ -62,7 +62,7 @@ class SimulationDroneService(DroneServiceBase):
 
             # If out of fuel, emergency mode
             if self.drone.fuel_level <= 0:
-                self.drone.state = DroneState.EMERGENCY
+                self.drone.telemetry.state = DroneState.EMERGENCY
 
     def start_service(self) -> None:
         """Start the drone update thread."""
@@ -93,9 +93,9 @@ class SimulationDroneService(DroneServiceBase):
         target_altitude = 1
 
         # Check if drone can take off
-        if self.drone.state not in [DroneState.IDLE]:
+        if self.drone.telemetry.state not in [DroneState.IDLE]:
             raise DroneNotOperationalException(
-                f"Cannot take off in {self.drone.state} state"
+                f"Cannot take off in {self.drone.telemetry.state} state"
             )
 
         # Check if target altitude is valid
@@ -122,7 +122,7 @@ class SimulationDroneService(DroneServiceBase):
             )
 
         # Set state to taking off
-        self.drone.state = DroneState.TAKING_OFF
+        self.drone.telemetry.state = DroneState.TAKING_OFF
 
         # Set vertical speed
         self.drone.telemetry.speed = self.drone.model.max_vertical_speed
@@ -142,7 +142,7 @@ class SimulationDroneService(DroneServiceBase):
             for step in range(num_steps):
                 if (
                     self.drone.fuel_level <= 0
-                    or self.drone.state != DroneState.TAKING_OFF
+                    or self.drone.telemetry.state != DroneState.TAKING_OFF
                 ):
                     break
 
@@ -192,23 +192,23 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.telemetry = final_telemetry
 
             # Change state to flying and reset speed
-            self.drone.state = DroneState.FLYING
+            self.drone.telemetry.state = DroneState.FLYING
             self.drone.telemetry.speed = 0.0
 
         except OutOfBoundsException as e:
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise DroneException(f"Take off failed: {str(e)}")
         except Exception as e:
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise DroneException(f"Take off failed: Unexpected error: {str(e)}")
 
     def land(self) -> None:
         """Command drone to land."""
         target_altitude = 0.1  # Final altitude after landing
 
-        if self.drone.state not in [DroneState.FLYING, DroneState.EMERGENCY]:
+        if self.drone.telemetry.state not in [DroneState.FLYING, DroneState.EMERGENCY]:
             raise DroneNotOperationalException(
-                f"Cannot land in {self.drone.state} state"
+                f"Cannot land in {self.drone.telemetry.state} state"
             )
 
         # Calculate time needed for landing
@@ -225,13 +225,13 @@ class SimulationDroneService(DroneServiceBase):
 
         if self.drone.fuel_level < fuel_required:
             # If not enough fuel, enter emergency state but still try to land
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             logger.warning(
                 f"Insufficient fuel for controlled landing: {self.drone.fuel_level}"
             )
         else:
             # Set state to landing
-            self.drone.state = DroneState.LANDING
+            self.drone.telemetry.state = DroneState.LANDING
 
         # Set vertical speed (negative for descent)
         self.drone.telemetry.speed = self.drone.model.max_vertical_speed
@@ -249,7 +249,10 @@ class SimulationDroneService(DroneServiceBase):
         try:
             # Move the drone step by step
             for step in range(num_steps):
-                if self.drone.state not in [DroneState.LANDING, DroneState.EMERGENCY]:
+                if self.drone.telemetry.state not in [
+                    DroneState.LANDING,
+                    DroneState.EMERGENCY,
+                ]:
                     break
 
                 # Calculate new position
@@ -301,21 +304,21 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.telemetry = final_telemetry
 
             # Change state to idle and reset speed
-            self.drone.state = DroneState.IDLE
+            self.drone.telemetry.state = DroneState.IDLE
             self.drone.telemetry.speed = 0.0
 
         except OutOfBoundsException as e:
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise DroneException(f"Landing failed: {str(e)}")
         except Exception as e:
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise DroneException(f"Landing failed: Unexpected error: {str(e)}")
 
     def move_global(self, target_location: Location) -> None:
         """Command drone to move to a target location."""
-        if self.drone.state != DroneState.FLYING:
+        if self.drone.telemetry.state != DroneState.FLYING:
             raise DroneNotOperationalException(
-                f"Cannot move in {self.drone.state} state"
+                f"Cannot move in {self.drone.telemetry.state} state"
             )
 
         target_telemetry = Telemetry(
@@ -362,7 +365,10 @@ class SimulationDroneService(DroneServiceBase):
 
         # Move the drone step by step
         for step in range(num_steps):
-            if self.drone.fuel_level <= 0 or self.drone.state != DroneState.FLYING:
+            if (
+                self.drone.fuel_level <= 0
+                or self.drone.telemetry.state != DroneState.FLYING
+            ):
                 break
 
             # Update drone location
@@ -387,9 +393,9 @@ class SimulationDroneService(DroneServiceBase):
 
     def turn_global(self, heading: float) -> None:
         """Command drone to turn to a target heading angle."""
-        if self.drone.state != DroneState.FLYING:
+        if self.drone.telemetry.state != DroneState.FLYING:
             raise DroneNotOperationalException(
-                f"Cannot turn in {self.drone.state} state"
+                f"Cannot turn in {self.drone.telemetry.state} state"
             )
 
         # Normalize target angle to [0, 360) range
@@ -435,7 +441,10 @@ class SimulationDroneService(DroneServiceBase):
         try:
             # Turn the drone step by step
             for step in range(num_steps):
-                if self.drone.fuel_level <= 0 or self.drone.state != DroneState.FLYING:
+                if (
+                    self.drone.fuel_level <= 0
+                    or self.drone.telemetry.state != DroneState.FLYING
+                ):
                     break
 
                 # Update drone heading
@@ -471,14 +480,14 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.telemetry = final_telemetry
 
         except Exception as e:
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise DroneException(f"Turn failed: Unexpected error: {str(e)}")
 
     def turn_body(self, angle: float) -> None:
         """Command drone to turn at yaw in a specific angle in the body frame."""
-        if self.drone.state != DroneState.FLYING:
+        if self.drone.telemetry.state != DroneState.FLYING:
             raise DroneNotOperationalException(
-                f"Cannot turn in {self.drone.state} state"
+                f"Cannot turn in {self.drone.telemetry.state} state"
             )
 
         target_angle = self.drone.telemetry.heading + angle

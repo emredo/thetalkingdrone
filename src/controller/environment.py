@@ -4,7 +4,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from src.models.physical_models import DroneModel, DroneType, Location, Telemetry
+from src.models.physical_models import DroneModel, DroneState, DroneType, Location, Telemetry
 from src.services.crazyflie_drone import CrazyFlieService
 from src.services.environment import EnvironmentService
 from src.services.simulation_drone import SimulationDroneService
@@ -105,6 +105,7 @@ def create_default_simulation_drone(
             position=request.location,
             speed=0.0,
             heading=0.0,
+            state=DroneState.IDLE,
         )
         # Create drone service
         drone_id = str(uuid.uuid4())[:4]
@@ -147,6 +148,7 @@ def create_crazyflie_drone(
             position=request.location,
             speed=0.0,
             heading=0.0,
+            state=DroneState.IDLE,
         )
         drone_service: CrazyFlieService = CrazyFlieService.create_drone(
             model=model, telemetry=telemetry, drone_id=drone_id

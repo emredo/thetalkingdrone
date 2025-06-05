@@ -141,7 +141,7 @@ class CrazyFlieService(DroneServiceBase):
             self._scf.cf.high_level_commander.takeoff(
                 CRAZYFLIE_TAKEOFF_ALTITUDE, duration
             )
-            self.drone.state = DroneState.TAKING_OFF
+            self.drone.telemetry.state = DroneState.TAKING_OFF
             for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
                 time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
                 if (
@@ -149,11 +149,11 @@ class CrazyFlieService(DroneServiceBase):
                     <= CRAZYFLIE_DISTANCE_ERROR_DELTA
                 ):
                     break
-            self.drone.state = DroneState.FLYING
+            self.drone.telemetry.state = DroneState.FLYING
             logger.info("Takeoff successful.")
         except Exception as e:
             logger.error(f"Takeoff failed: {e}")
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise RuntimeError(f"Takeoff failed: {e}")
 
     def land(self) -> None:
@@ -169,7 +169,7 @@ class CrazyFlieService(DroneServiceBase):
         logger.info("Commanding drone to land.")
         try:
             self._scf.cf.high_level_commander.land(0, duration)
-            self.drone.state = DroneState.LANDING
+            self.drone.telemetry.state = DroneState.LANDING
             for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
                 time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
                 if (
@@ -178,11 +178,11 @@ class CrazyFlieService(DroneServiceBase):
                 ):
                     break
             self._scf.cf.high_level_commander.stop()
-            self.drone.state = DroneState.IDLE
+            self.drone.telemetry.state = DroneState.IDLE
             logger.info("Landing successful.")
         except Exception as e:
             logger.error(f"Landing failed: {e}")
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise RuntimeError(f"Landing failed: {e}")
 
     def move_global(self, target_location: Location) -> None:
@@ -192,9 +192,9 @@ class CrazyFlieService(DroneServiceBase):
             logger.warning("Cannot move_to, service not running.")  # Added log
             raise RuntimeError("Service not running, cannot move_to.")
 
-        if self.drone.state not in [DroneState.FLYING, DroneState.IDLE]:
+        if self.drone.telemetry.state not in [DroneState.FLYING, DroneState.IDLE]:
             raise DroneNotOperationalException(
-                f"Cannot move in {self.drone.state} state"
+                f"Cannot move in {self.drone.telemetry.state} state"
             )
 
         target_euc_distance = calc_euclidean_distance(
@@ -206,7 +206,7 @@ class CrazyFlieService(DroneServiceBase):
         )
         try:
             # Ensure drone is flying before moving to a new XY location
-            if self.drone.state == DroneState.IDLE:  # check if on the ground
+            if self.drone.telemetry.state == DroneState.IDLE:  # check if on the ground
                 logger.warning("Drone is IDLE position. Taking off before move_global.")
                 self.take_off()
 
@@ -228,12 +228,12 @@ class CrazyFlieService(DroneServiceBase):
                     <= CRAZYFLIE_DISTANCE_ERROR_DELTA
                 ):
                     break
-            self.drone.state = DroneState.FLYING
+            self.drone.telemetry.state = DroneState.FLYING
             logger.info(f"Successfully moved to {target_location}")
 
         except Exception as e:
             logger.error(f"Move_to failed: {e}")
-            self.drone.state = DroneState.EMERGENCY
+            self.drone.telemetry.state = DroneState.EMERGENCY
             raise RuntimeError(f"Move_to failed: {e}")
 
     def turn_global(self, angle: float) -> None:
@@ -243,9 +243,9 @@ class CrazyFlieService(DroneServiceBase):
             logger.warning("Cannot turn, service not running.")  # Added log
             raise RuntimeError("Service not running, cannot turn.")
 
-        if self.drone.state not in [DroneState.FLYING, DroneState.IDLE]:
+        if self.drone.telemetry.state not in [DroneState.FLYING, DroneState.IDLE]:
             raise DroneNotOperationalException(
-                f"Cannot turn in {self.drone.state} state"
+                f"Cannot turn in {self.drone.telemetry.state} state"
             )
 
         duration = max(
@@ -263,10 +263,10 @@ class CrazyFlieService(DroneServiceBase):
             if (
                 abs(self.drone.telemetry.heading - angle)
                 <= CRAZYFLIE_HEADING_ERROR_DELTA
-                and self.drone.state == DroneState.FLYING
+                and self.drone.telemetry.state == DroneState.FLYING
             ):
                 break
-        self.drone.state = DroneState.FLYING
+        self.drone.telemetry.state = DroneState.FLYING
         logger.info(f"Successfully turned to {angle} degrees")
 
         logger.info(f"Commanding drone to turn {angle} degrees")
@@ -279,7 +279,7 @@ class CrazyFlieService(DroneServiceBase):
             raise RuntimeError("Service not running, cannot turn.")
 
         logger.info(f"Commanding drone to turn {angle} degrees")
-
+    
     def move_body(self, relative_location: Location) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")

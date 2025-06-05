@@ -55,6 +55,7 @@ class Telemetry(BaseModel):
     speed: float = Field(default=0.0, description="Speed in m/s")
     heading: float = Field(default=0.0, description="Heading in degrees")
     position: Location = Field(description="Position in 3D space")
+    state: DroneState = Field(description="State of the drone")
 
 
 class BuildingInformation(BaseModel):
@@ -80,7 +81,6 @@ class DroneData(BaseModel):
 
     drone_id: str = Field(description="Unique identifier for the drone")
     model: DroneModel
-    state: DroneState = Field(default=DroneState.IDLE)
     fuel_level: float = Field(description="Current fuel level")
     payload: float = Field(default=0.0, description="Current payload weight in kg")
     telemetry: Telemetry = Field(description="Additional telemetry data")
