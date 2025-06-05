@@ -485,11 +485,11 @@ class SimulationDroneService(DroneServiceBase):
         target_angle = self.drone.telemetry.heading + angle
         self.turn_global(target_angle)
 
-    def move_body(self, x: float, y: float, z: float) -> None:
+    def move_body(self, relative_location: Location) -> None:
         """Command drone to move in the body frame."""
         target_location = Location(
-            x=self.drone.telemetry.position.x + x,
-            y=self.drone.telemetry.position.y + y,
-            z=self.drone.telemetry.position.z + z,
+            x=self.drone.telemetry.position.x + relative_location.x,
+            y=self.drone.telemetry.position.y + relative_location.y,
+            z=self.drone.telemetry.position.z + relative_location.z,
         )
         self.move_global(target_location)

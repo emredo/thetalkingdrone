@@ -118,8 +118,8 @@ def land(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{drone_id}/move/")
-def move_to(
+@router.post("/{drone_id}/move_global/")
+def move_global(
     target: Location, drone_service: DroneServiceBase = Depends(get_drone_service)
 ) -> Dict[str, str]:
     """Command drone to move to the specified location."""
@@ -136,14 +136,48 @@ def move_to(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{drone_id}/turn/")
-def turn(
+@router.post("/{drone_id}/move_body/")
+def move_body(
+    target: Location, drone_service: DroneServiceBase = Depends(get_drone_service)
+) -> Dict[str, str]:
+    """Command drone to move to the specified location."""
+    try:
+        drone_service.move_body(target)
+        return {
+            "status": "success",
+            "message": f"Moving to location ({target.x}, {target.y}, {target.z})",
+        }
+    except (DroneException, OutOfBoundsException) as e:
+        logger.error(
+            f"Move operation failed for drone {drone_service.drone.drone_id} to location ({target.x}, {target.y}, {target.z}): {str(e)}"
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{drone_id}/turn_global/")
+def turn_global(
     request: TurnRequest,
     drone_service: DroneServiceBase = Depends(get_drone_service),
 ) -> Dict[str, str]:
     """Command drone to turn to the specified angle."""
     try:
         drone_service.turn_global(request.angle)
+        return {"status": "success", "message": f"Turning to {request.angle} degrees"}
+    except (DroneException, OutOfBoundsException) as e:
+        logger.error(
+            f"Turn operation failed for drone {drone_service.drone.drone_id} to angle {request.angle}: {str(e)}"
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{drone_id}/turn_body/")
+def turn_body(
+    request: TurnRequest,
+    drone_service: DroneServiceBase = Depends(get_drone_service),
+) -> Dict[str, str]:
+    """Command drone to turn to the specified angle at body frame"""
+    try:
+        drone_service.turn_body(request.angle)
         return {"status": "success", "message": f"Turning to {request.angle} degrees"}
     except (DroneException, OutOfBoundsException) as e:
         logger.error(

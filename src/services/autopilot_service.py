@@ -167,7 +167,7 @@ class AutoPilotService:
 
         @tool("turn_body")
         def turn_body(angle: float) -> str:
-            """Command the drone to turn at yaw in a specific angle in the body frame."""
+            """Command the drone to turn at yaw in a specific angle in the body frame. The angle is relative to the current heading. An example ccw is negative and cw is positive."""
             try:
                 self.drone_service.turn_global(angle)
                 return f"Drone turning {angle} degrees"
@@ -185,7 +185,7 @@ class AutoPilotService:
 
         @tool("move_to_body")
         def move_to_body(x: float, y: float, z: float) -> str:
-            """Command the drone to move to a specific 3D coordinate (x, y, z) in the body frame."""
+            """Command the drone to move to a specific 3D coordinate (x, y, z) in the body frame. The coordinates are relative to the current position of the drone."""
             try:
                 location = Location(x=x, y=y, z=z)
                 self.drone_service.move_global(location)

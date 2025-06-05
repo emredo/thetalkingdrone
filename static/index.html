@@ -362,11 +362,25 @@
                 <input type="number" id="targetX" placeholder="X" style="width: 60px;">
                 <input type="number" id="targetY" placeholder="Y" style="width: 60px;">
                 <input type="number" id="targetZ" placeholder="Z" style="width: 60px;">
-                <button onclick="moveToPosition()">Move To</button>
+                <div style="margin-top: 5px;">
+                    <button onclick="moveToPositionGlobal()" style="background-color: #4CAF50; margin-right: 5px;">Move
+                        Global</button>
+                    <button onclick="moveToPositionBody()" style="background-color: #2196F3;">Move Body</button>
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 3px;">
+                    Global: world coordinates, Body: relative to drone orientation
+                </div>
             </div>
             <div style="margin-top: 10px;">
                 <input type="number" id="turnAngle" placeholder="Angle (deg)" style="width: 120px;">
-                <button onclick="turnDrone()">Turn</button>
+                <div style="margin-top: 5px;">
+                    <button onclick="turnDroneGlobal()" style="background-color: #ff6b35; margin-right: 5px;">Turn
+                        Global</button>
+                    <button onclick="turnDroneBody()" style="background-color: #f7931e;">Turn Body</button>
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 3px;">
+                    Global: absolute angle, Body: relative to current heading
+                </div>
             </div>
         </div>
     </div>
@@ -619,8 +633,8 @@
             }
         }
 
-        // Move to position
-        async function moveToPosition() {
+        // Move to position globally (world coordinates)
+        async function moveToPositionGlobal() {
             if (!selectedDroneId || !droneDetailData) return;
 
             try {
@@ -633,7 +647,7 @@
                     return;
                 }
 
-                const response = await fetch(`/autopilot/${selectedDroneId}/move`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/move_global/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -645,7 +659,7 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('Failed to move');
+                if (!response.ok) throw new Error('Failed to move globally');
 
                 const result = await response.json();
                 console.log(result.message);
@@ -653,12 +667,52 @@
                 // Refresh the data
                 fetchData();
             } catch (error) {
-                console.error('Error moving drone:', error);
+                console.error('Error moving drone globally:', error);
+                alert(`Error moving drone globally: ${error.message}`);
             }
         }
 
-        // Turn drone
-        async function turnDrone() {
+        // Move to position relative to body (drone's local coordinates)
+        async function moveToPositionBody() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            try {
+                const targetX = parseFloat(document.getElementById('targetX').value);
+                const targetY = parseFloat(document.getElementById('targetY').value);
+                const targetZ = parseFloat(document.getElementById('targetZ').value);
+
+                if (isNaN(targetX) || isNaN(targetY) || isNaN(targetZ)) {
+                    alert('Please enter valid coordinates for X, Y, and Z');
+                    return;
+                }
+
+                const response = await fetch(`/autopilot/${selectedDroneId}/move_body/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        x: targetX,
+                        y: targetY,
+                        z: targetZ
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to move relative to body');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error moving drone relative to body:', error);
+                alert(`Error moving drone relative to body: ${error.message}`);
+            }
+        }
+
+        // Turn drone globally (absolute angle)
+        async function turnDroneGlobal() {
             if (!selectedDroneId || !droneDetailData) return;
 
             try {
@@ -669,7 +723,7 @@
                     return;
                 }
 
-                const response = await fetch(`/autopilot/${selectedDroneId}/turn/`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/turn_global/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -679,7 +733,7 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('Failed to turn');
+                if (!response.ok) throw new Error('Failed to turn globally');
 
                 const result = await response.json();
                 console.log(result.message);
@@ -687,7 +741,43 @@
                 // Refresh the data
                 fetchData();
             } catch (error) {
-                console.error('Error turning drone:', error);
+                console.error('Error turning drone globally:', error);
+                alert(`Error turning drone globally: ${error.message}`);
+            }
+        }
+
+        // Turn drone relative to body (relative angle)
+        async function turnDroneBody() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            try {
+                const angle = parseFloat(document.getElementById('turnAngle').value);
+
+                if (isNaN(angle)) {
+                    alert('Please enter a valid angle in degrees');
+                    return;
+                }
+
+                const response = await fetch(`/autopilot/${selectedDroneId}/turn_body/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        angle: angle
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to turn relative to body');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error turning drone relative to body:', error);
+                alert(`Error turning drone relative to body: ${error.message}`);
             }
         }
 

@@ -275,11 +275,13 @@ class CrazyFlieService(DroneServiceBase):
 
         logger.info(f"Commanding drone to turn {angle} degrees")
 
-    def move_body(self, x: float, y: float, z: float) -> None:
+    def move_body(self, relative_location: Location) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")
         if not self._is_running:  # Added check
             logger.warning("Cannot move, service not running.")  # Added log
             raise RuntimeError("Service not running, cannot move.")
 
-        logger.info(f"Commanding drone to move {x}, {y}, {z}")
+        logger.info(
+            f"Commanding drone to move {relative_location.x}, {relative_location.y}, {relative_location.z}"
+        )

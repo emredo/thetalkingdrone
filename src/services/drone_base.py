@@ -114,6 +114,6 @@ class DroneServiceBase(ABC):
         pass
 
     @abstractmethod
-    def move_body(self, x: float, y: float, z: float) -> None:
+    def move_body(self, relative_location: Location) -> None:
         """Command drone to move in the body frame."""
         pass
