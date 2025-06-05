@@ -246,7 +246,7 @@ class AutoPilotService:
             self.memory.append(HumanMessage(content=command))
             # Execute the agent with the input state
             response = self.agent.invoke(
-                {"messages": self.memory}, {"recursion_limit": 50}
+                {"messages": self.memory}, {"recursion_limit": 10}
             )
             self.memory = response.get("messages", [])
         except Exception as e:
