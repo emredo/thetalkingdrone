@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -83,6 +83,14 @@ def get_chat_history(
 ) -> List[Dict[str, str]]:
     """Get the chat history for the specified drone."""
     return autopilot_service.get_chat_history()
+
+
+@router.get("/{drone_id}/ham_chat_history/")
+def get_ham_chat_history(
+    drone_id: str, autopilot_service: AutoPilotService = Depends(get_autopilot_service)
+) -> List[Dict[str, Any]]:
+    """Get the ham chat history for the specified drone."""
+    return [msg.model_dump() for msg in autopilot_service.memory]
 
 
 @router.post("/{drone_id}/takeoff/")

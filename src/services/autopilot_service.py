@@ -73,6 +73,9 @@ You have access to the following drone control tools:
 
 ## BUILDINGS
 {buildings}
+
+## CHAT HISTORY
+{chat_history}
 """
 
 
@@ -104,7 +107,7 @@ class AutoPilotService:
                     google_api_key=GOOGLE_API_KEY,
                 ),
                 tools=self._create_drone_tools(),
-                prompt=self._prepare_prompt(),
+                prompt=self._prepare_prompt,
             )
             self.is_initialized = True
         except Exception as e:
@@ -124,7 +127,7 @@ class AutoPilotService:
                 chat_history += f"AI: {message.content}\n"
         return chat_history
 
-    def _prepare_prompt(self) -> str:
+    def _prepare_prompt(self, state) -> str:
         """Prepare the prompt for the agent."""
         prompt = PromptTemplate(
             template=SYSTEM_PROMPT,
@@ -136,10 +139,11 @@ class AutoPilotService:
         buildings_str = "\n".join(
             [str(building.model_dump()) for building in buildings]
         )
-        # chat_history = self._create_chat_history()
+        chat_history = self._create_chat_history()
         prepared_prompt = prompt.format(
             telemetry=self.drone_service.get_telemetry(),
             buildings=buildings_str,
+            chat_history=chat_history,
         )
 
         return prepared_prompt
