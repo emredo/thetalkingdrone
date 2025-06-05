@@ -138,12 +138,14 @@ class AutoPilotService:
             response = self.agent.invoke(input_state)
 
             return_str = ""
+            ct = 0
             for message in response.get("messages", []):
-                if isinstance(message, AIMessage):
+                if isinstance(message, AIMessage) and message.content != "":
                     content = (
                         message.content if message.content != "" else "No response"
                     )
-                    return_str += f"\n-----------\n{content}"
+                    return_str += f"\n-----{ct}-----\n{content}"
+                    ct += 1
 
             return {"status": "success", "result": return_str}
         except Exception as e:

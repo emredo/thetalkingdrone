@@ -270,10 +270,6 @@
             <!-- Add natural language command section -->
             <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
                 <h3>LLM Autopilot</h3>
-                <div class="detail-row" style="margin-bottom: 15px;">
-                    <button id="initAutopilotBtn" onclick="initializeAutopilot()" style="width: 100%;">Initialize
-                        Autopilot</button>
-                </div>
                 <div style="margin-bottom: 10px;">
                     <textarea id="nlCommand"
                         placeholder="Enter a natural language command (e.g., 'take off to 20 meters')"
@@ -282,7 +278,7 @@
                 </div>
                 <div>
                     <button id="sendCommandBtn" onclick="sendNLCommand()"
-                        style="width: 100%; background-color: #007bff;" disabled>Send Command</button>
+                        style="width: 100%; background-color: #007bff;">Send Command</button>
                 </div>
                 <div id="commandResult"
                     style="margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; display: none;">
@@ -685,43 +681,12 @@
         fetchData();
 
         // Auto-refresh every 1 second
-        setInterval(fetchData, 1000);
+        setInterval(fetchData, 100);
 
         // Add these functions to handle the LLM Autopilot
-        let selectedDroneHasAutopilot = false;
-
-        function initializeAutopilot() {
+        function sendNLCommand() {
             if (!selectedDroneId) {
                 alert("Please select a drone first");
-                return;
-            }
-
-            fetch(`/autopilot/${selectedDroneId}/initialize`, {
-                method: 'POST'
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log("Autopilot initialized:", data);
-                    selectedDroneHasAutopilot = true;
-                    document.getElementById('sendCommandBtn').disabled = false;
-                    document.getElementById('initAutopilotBtn').style.backgroundColor = '#007bff';
-                    document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
-                    document.getElementById('initAutopilotBtn').disabled = true;
-                })
-                .catch(error => {
-                    console.error("Error initializing autopilot:", error);
-                    alert(`Error initializing autopilot: ${error.message}`);
-                });
-        }
-
-        function sendNLCommand() {
-            if (!selectedDroneId || !selectedDroneHasAutopilot) {
-                alert("Please select a drone and initialize its autopilot first");
                 return;
             }
 
@@ -785,11 +750,7 @@
                 return;
             }
 
-            // Reset autopilot state
-            selectedDroneHasAutopilot = false;
-            document.getElementById('sendCommandBtn').disabled = true;
-            document.getElementById('initAutopilotBtn').disabled = false;
-            document.getElementById('initAutopilotBtn').textContent = 'Initialize Autopilot';
+            // Reset command result display
             document.getElementById('commandResult').style.display = 'none';
         }
 
