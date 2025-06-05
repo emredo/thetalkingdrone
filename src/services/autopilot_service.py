@@ -120,7 +120,7 @@ class AutoPilotService:
         buildings: List[BuildingInformation] = (
             self.drone_service.environment.features.buildings
         )
-        buildings_str = "\n".join([building.model_dump() for building in buildings])
+        buildings_str = "\n".join([str(building.model_dump()) for building in buildings])
         prepared_prompt = prompt.format(
             telemetry=self.drone_service.get_telemetry(),
             buildings=buildings_str,

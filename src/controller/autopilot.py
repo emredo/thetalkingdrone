@@ -13,8 +13,8 @@ from src.models import (
 )
 from src.models.physical_models import Location
 from src.services.autopilot_service import AutoPilotService
+from src.services.drone_base import DroneServiceBase
 from src.services.environment import EnvironmentService
-from src.services.simulation_drone import SimulationDroneService
 from src.utils.logger import logger
 
 router = APIRouter(prefix="/autopilot", tags=["autopilot"])
@@ -24,6 +24,12 @@ class CommandInput(BaseModel):
     """Model for natural language command input."""
 
     command: str
+
+
+class TurnRequest(BaseModel):
+    """Model for turn request."""
+
+    angle: float
 
 
 def get_autopilot_service(drone_id: str) -> AutoPilotService:
@@ -74,7 +80,7 @@ def execute_command(
 
 @router.post("/{drone_id}/takeoff/")
 def take_off(
-    drone_service: SimulationDroneService = Depends(get_drone_service),
+    drone_service: DroneServiceBase = Depends(get_drone_service),
 ) -> Dict[str, str]:
     """Command drone to take off to the specified altitude."""
     try:
@@ -92,7 +98,7 @@ def take_off(
 
 @router.post("/{drone_id}/land/")
 def land(
-    drone_service: SimulationDroneService = Depends(get_drone_service),
+    drone_service: DroneServiceBase = Depends(get_drone_service),
 ) -> Dict[str, str]:
     """Command drone to land."""
     try:
@@ -107,7 +113,7 @@ def land(
 
 @router.post("/{drone_id}/move/")
 def move_to(
-    target: Location, drone_service: SimulationDroneService = Depends(get_drone_service)
+    target: Location, drone_service: DroneServiceBase = Depends(get_drone_service)
 ) -> Dict[str, str]:
     """Command drone to move to the specified location."""
     try:
@@ -119,5 +125,21 @@ def move_to(
     except (DroneException, OutOfBoundsException) as e:
         logger.error(
             f"Move operation failed for drone {drone_service.drone.drone_id} to location ({target.x}, {target.y}, {target.z}): {str(e)}"
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{drone_id}/turn/")
+def turn(
+    request: TurnRequest,
+    drone_service: DroneServiceBase = Depends(get_drone_service),
+) -> Dict[str, str]:
+    """Command drone to turn to the specified angle."""
+    try:
+        drone_service.turn(request.angle)
+        return {"status": "success", "message": f"Turning to {request.angle} degrees"}
+    except (DroneException, OutOfBoundsException) as e:
+        logger.error(
+            f"Turn operation failed for drone {drone_service.drone.drone_id} to angle {request.angle}: {str(e)}"
         )
         raise HTTPException(status_code=400, detail=str(e))

@@ -296,6 +296,10 @@
                 <input type="number" id="targetZ" placeholder="Z" style="width: 60px;">
                 <button onclick="moveToPosition()">Move To</button>
             </div>
+            <div style="margin-top: 10px;">
+                <input type="number" id="turnAngle" placeholder="Angle (deg)" style="width: 120px;">
+                <button onclick="turnDrone()">Turn</button>
+            </div>
         </div>
     </div>
 
@@ -338,6 +342,65 @@
 
         // Scale factors
         let scaleX, scaleY;
+
+        // Drone SVG icon setup
+        let droneIcon = null;
+        const iconSize = 32; // Size in pixels
+
+        // Load drone SVG icon
+        function loadDroneIcon() {
+            droneIcon = new Image();
+            droneIcon.onload = function () {
+                console.log('Drone icon loaded successfully');
+            };
+            droneIcon.onerror = function () {
+                console.error('Failed to load drone icon');
+            };
+
+            // Create SVG data URL with the drone icon
+            const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M19.74 30.7L6.5 42.43L24 5.57m4.26 25.13L41.5 42.43L24 5.57" stroke-width="2"/><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M19.74 30.7h8.52L24 5.57Z" stroke-width="2"/></svg>`;
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(svgBlob);
+            droneIcon.src = url;
+        }
+
+        // Function to draw rotated drone icon
+        function drawDroneIcon(x, y, heading, color, isSelected = false) {
+            if (!droneIcon) return;
+
+            ctx.save();
+
+            // Draw selection highlight
+            if (isSelected) {
+                ctx.beginPath();
+                ctx.arc(x, y, iconSize / 2 + 4, 0, Math.PI * 2);
+                ctx.strokeStyle = 'gold';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // Move to drone position
+            ctx.translate(x, y);
+
+            // Rotate based on heading (convert degrees to radians)
+            // Note: SVG icon points upward by default, so we rotate from that orientation
+            const rotationRadians = (heading - 90) * Math.PI / 180; // -90 to align with "north" being up
+            ctx.rotate(rotationRadians);
+
+            // Apply color tint by using composite operations
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Draw the icon centered
+            const halfSize = iconSize / 2;
+            ctx.drawImage(droneIcon, -halfSize, -halfSize, iconSize, iconSize);
+
+            // Apply color overlay
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = color;
+            ctx.fillRect(-halfSize, -halfSize, iconSize, iconSize);
+
+            ctx.restore();
+        }
 
         // Fetch environment data
         async function fetchData() {
@@ -525,6 +588,40 @@
             }
         }
 
+        // Turn drone
+        async function turnDrone() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            try {
+                const angle = parseFloat(document.getElementById('turnAngle').value);
+
+                if (isNaN(angle)) {
+                    alert('Please enter a valid angle in degrees');
+                    return;
+                }
+
+                const response = await fetch(`/autopilot/${selectedDroneId}/turn/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        angle: angle
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to turn');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error turning drone:', error);
+            }
+        }
+
         // Render the environment
         function renderEnvironment() {
             if (!environmentData) return;
@@ -597,48 +694,37 @@
                 const x = drone.telemetry.position.x * scaleX;
                 const y = drone.telemetry.position.y * scaleY;
 
-                // Draw highlight for selected drone
-                if (drone.drone_id === selectedDroneId) {
-                    ctx.beginPath();
-                    ctx.arc(x, y, 12, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'gold';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-
                 // Set drone color based on state to match the legend
+                let droneColor;
                 switch (drone.state) {
-                    case 'IDLE': ctx.fillStyle = 'green'; break;
-                    case 'FLYING': ctx.fillStyle = 'blue'; break;
-                    case 'TAKING_OFF': ctx.fillStyle = 'purple'; break;
-                    case 'LANDING': ctx.fillStyle = 'orange'; break;
-                    case 'EMERGENCY': ctx.fillStyle = 'red'; break;
-                    default: ctx.fillStyle = 'black';
+                    case 'IDLE': droneColor = 'green'; break;
+                    case 'FLYING': droneColor = 'blue'; break;
+                    case 'TAKING_OFF': droneColor = 'purple'; break;
+                    case 'LANDING': droneColor = 'orange'; break;
+                    case 'EMERGENCY': droneColor = 'red'; break;
+                    default: droneColor = 'black';
                 }
 
-                // Draw the drone
-                ctx.beginPath();
-                ctx.arc(x, y, 8, 0, Math.PI * 2);
-                ctx.fill();
+                // Draw the drone icon with rotation based on heading
+                const isSelected = drone.drone_id === selectedDroneId;
+                drawDroneIcon(x, y, drone.telemetry.heading, droneColor, isSelected);
 
-                // Draw outline
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-
-                // Display only altitude with BIG BLACK TEXT
+                // Display altitude and heading with BIG BLACK TEXT
                 const altText = `${drone.telemetry.position.z.toFixed(1)}m`;
-                ctx.font = 'bold 16px Arial';
+                const headingText = `${drone.telemetry.heading.toFixed(0)}°`;
+                const displayText = `${altText} | ${headingText}`;
+
+                ctx.font = 'bold 14px Arial';
                 ctx.fillStyle = 'black';
 
                 // Add white background to ensure text is visible on any background
-                const textWidth = ctx.measureText(altText).width;
+                const textWidth = ctx.measureText(displayText).width;
                 ctx.fillStyle = 'white';
-                ctx.fillRect(x + 25, y - 20, textWidth + 6, 24);
+                ctx.fillRect(x + iconSize / 2 + 5, y - 12, textWidth + 6, 24);
 
-                // Draw the altitude text
+                // Draw the text
                 ctx.fillStyle = 'black';
-                ctx.fillText(altText, x + 28, y - 3);
+                ctx.fillText(displayText, x + iconSize / 2 + 8, y + 3);
             });
         }
 
@@ -653,7 +739,7 @@
 
             // Find a drone that was clicked
             let clickedDrone = null;
-            const clickRadius = 8 / Math.min(scaleX, scaleY); // Convert 8px to environment units
+            const clickRadius = (iconSize / 2) / Math.min(scaleX, scaleY); // Convert icon radius to environment units
 
             for (const drone of Object.values(environmentData.drones)) {
                 const dx = drone.telemetry.position.x - clickX;
@@ -676,6 +762,9 @@
 
             renderEnvironment();
         });
+
+        // Initialize drone icon
+        loadDroneIcon();
 
         // Initial data fetch
         fetchData();
