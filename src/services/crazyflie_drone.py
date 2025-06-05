@@ -112,21 +112,16 @@ class CrazyFlieService(DroneServiceBase):
             self._is_running = False
             logger.info(f"CrazyFlie service thread stopped for {self._uri}.")
 
-        if self._mc:
-            try:
-                # Ensure drone is landed before closing if using motion commander
-                # self._mc.stop() # This might try to land if in mid-air.
-                pass
-            except Exception as e:
-                logger.warning(f"Error stopping motion commander: {e}")
         if self._scf and self._is_connected:
             try:
+                self.position_hl_commander.land()
+                time.sleep(1)
                 self._scf.close_link()
                 logger.info("Crazyflie link closed.")
             except Exception as e:
                 logger.error(f"Error closing Crazyflie link: {e}")
         self._is_connected = False
-        self._mc = None  # Clear motion commander
+        self.position_hl_commander = None
 
     def take_off(self) -> None:
         if not self._is_connected or not self._scf:
