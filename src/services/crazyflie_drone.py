@@ -168,8 +168,7 @@ class CrazyFlieService(DroneServiceBase):
 
         logger.info("Commanding drone to land.")
         try:
-            commander = self._scf.cf.high_level_commander
-            commander.land(0, duration)
+            self._scf.cf.high_level_commander.land(0, duration)
             self.drone.state = DroneState.LANDING
             for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
                 time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
@@ -178,7 +177,7 @@ class CrazyFlieService(DroneServiceBase):
                     <= CRAZYFLIE_DISTANCE_ERROR_DELTA
                 ):
                     break
-            commander.stop()
+            self._scf.cf.high_level_commander.stop()
             self.drone.state = DroneState.IDLE
             logger.info("Landing successful.")
         except Exception as e:
@@ -206,13 +205,12 @@ class CrazyFlieService(DroneServiceBase):
             f"Commanding drone to move to {target_location}, duration: {duration}s"
         )
         try:
-            commander = self._scf.cf.high_level_commander
             # Ensure drone is flying before moving to a new XY location
             if self.drone.state == DroneState.IDLE:  # check if on the ground
                 logger.warning("Drone is IDLE position. Taking off before move_global.")
                 self.take_off()
 
-            commander.go_to(
+            self._scf.cf.high_level_commander.go_to(
                 target_location.x,
                 target_location.y,
                 target_location.z,
@@ -253,8 +251,7 @@ class CrazyFlieService(DroneServiceBase):
         duration = max(
             2, abs(self.drone.telemetry.heading - angle) / self.drone.model.max_yaw_rate
         )
-        commander = self._scf.cf.high_level_commander
-        commander.go_to(
+        self._scf.cf.high_level_commander.go_to(
             self.drone.telemetry.position.x,
             self.drone.telemetry.position.y,
             self.drone.telemetry.position.z,
