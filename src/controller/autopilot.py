@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -48,7 +48,7 @@ def execute_command(
     command_input: CommandInput,
     drone_id: str,
     environment: EnvironmentService = Depends(get_environment_instance),
-) -> Dict[str, Any]:
+):
     """Execute a natural language command via the autopilot agent."""
     if drone_id not in environment.autopilot_agents:
         raise HTTPException(
@@ -56,8 +56,7 @@ def execute_command(
         )
     agent = environment.autopilot_agents[drone_id]
     try:
-        result = agent.execute_command(command_input.command)
-        return result
+        agent.execute_command(command_input.command)
     except AgentNotInitializedException:
         logger.error(f"Autopilot agent for drone {drone_id} not initialized")
         raise HTTPException(
@@ -76,6 +75,14 @@ def execute_command(
         raise HTTPException(
             status_code=500, detail=f"Error executing command: {str(e)}"
         )
+
+
+@router.get("/{drone_id}/chat_history/")
+def get_chat_history(
+    drone_id: str, autopilot_service: AutoPilotService = Depends(get_autopilot_service)
+) -> List[Dict[str, str]]:
+    """Get the chat history for the specified drone."""
+    return autopilot_service.get_chat_history()
 
 
 @router.post("/{drone_id}/takeoff/")

@@ -80,6 +80,16 @@
             flex: 1;
         }
 
+        #chatHistory {
+            flex: 0 0 350px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
         #droneDetails {
             flex: 0 0 300px;
             background-color: white;
@@ -177,6 +187,61 @@
         .form-row button {
             margin-right: 10px;
         }
+
+        /* Chat History Styles */
+        .chat-messages {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+        }
+
+        .chat-message {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 90%;
+        }
+
+        .chat-message.user {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            margin-left: 10px;
+        }
+
+        .chat-message.agent {
+            background-color: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            margin-right: 10px;
+        }
+
+        .chat-message.tool {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            margin-left: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .message-type {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .message-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .chat-input-section {
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
     </style>
 </head>
 
@@ -220,7 +285,28 @@
             <canvas id="canvas" width="800" height="600"></canvas>
         </div>
 
-        <div id="droneDetails">
+        <div id="chatHistory" style="width: 150px;">
+            <h2>LLM Autopilot Chat</h2>
+            <div id="chatMessages" class="chat-messages" style="height: 250px;">
+                <div style="text-align: center; color: #666; font-style: italic;">
+                    Select a drone and send a command to start the conversation
+                </div>
+            </div>
+            <div class="chat-input-section">
+                <div style="margin-bottom: 10px;">
+                    <textarea id="nlCommand"
+                        placeholder="Enter a natural language command (e.g., 'take off to 20 meters')"
+                        style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; resize: vertical;"
+                        rows="2"></textarea>
+                </div>
+                <div>
+                    <button id="sendCommandBtn" onclick="sendNLCommand()"
+                        style="width: 100%; background-color: #007bff;">Send Command</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="droneDetails" style="width: 150px;">
             <h2>Drone Details <span id="droneState" class="badge badge-idle">IDLE</span></h2>
             <div class="detail-row">
                 <div class="detail-label">ID:</div>
@@ -267,23 +353,7 @@
                 <div class="detail-value" id="droneMaxSpeed"></div>
             </div>
 
-            <!-- Add natural language command section -->
-            <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
-                <h3>LLM Autopilot</h3>
-                <div style="margin-bottom: 10px;">
-                    <textarea id="nlCommand"
-                        placeholder="Enter a natural language command (e.g., 'take off to 20 meters')"
-                        style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; resize: vertical;"
-                        rows="3"></textarea>
-                </div>
-                <div>
-                    <button id="sendCommandBtn" onclick="sendNLCommand()"
-                        style="width: 100%; background-color: #007bff;">Send Command</button>
-                </div>
-                <div id="commandResult"
-                    style="margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; display: none;">
-                </div>
-            </div>
+
 
             <h3>Actions</h3>
             <div>
@@ -484,6 +554,7 @@
             selectedDroneId = null;
             droneDetailData = null;
             document.getElementById('droneDetails').style.display = 'none';
+            document.getElementById('chatHistory').style.display = 'none';
         }
 
         // Restart the simulation
@@ -688,6 +759,7 @@
             for (let x = 0; x <= bounds[0]; x += 0.1) {
                 ctx.beginPath();
                 ctx.moveTo(x * scaleX, 0);
+                ctx.moveTo(x * scaleX, 0);
                 ctx.lineTo(x * scaleX, canvas.height);
                 ctx.stroke();
             }
@@ -818,12 +890,10 @@
                 return;
             }
 
-            // Display loading indicator
-            const resultDiv = document.getElementById('commandResult');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '<div style="text-align: center;">Processing command...</div>';
+            // Display loading indicator in chat
+            displayLoadingMessage();
 
-            fetch(`/autopilot/${selectedDroneId}/command`, {
+            fetch(`/autopilot/${selectedDroneId}/command/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -837,19 +907,86 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log("Command result:", data);
-                    resultDiv.innerHTML = `
-                    <div style="margin-bottom: 5px; font-weight: bold;">Result:</div>
-                    <div style="white-space: pre-wrap; font-family: monospace;">${data.result}</div>
-                `;
+                    // Fetch and display chat history
+                    fetchChatHistory();
+
+                    // Clear the command input
+                    document.getElementById('nlCommand').value = '';
 
                     // Refresh drone data
                     fetchData();
                 })
                 .catch(error => {
                     console.error("Error executing command:", error);
-                    resultDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+                    displayErrorMessage(error.message);
                 });
+        }
+
+        // Display loading message in chat
+        function displayLoadingMessage() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">Processing command...</div>';
+        }
+
+        // Display error message in chat
+        function displayErrorMessage(errorMsg) {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `<div style="color: red; text-align: center;">Error: ${errorMsg}</div>`;
+        }
+
+        // Fetch and display chat history
+        async function fetchChatHistory() {
+            if (!selectedDroneId) return;
+
+            try {
+                const response = await fetch(`/autopilot/${selectedDroneId}/chat_history`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                const chatHistory = await response.json();
+                displayChatHistory(chatHistory);
+            } catch (error) {
+                console.error('Error fetching chat history:', error);
+                displayErrorMessage(`Failed to fetch chat history: ${error.message}`);
+            }
+        }
+
+        // Display chat history in the chat panel
+        function displayChatHistory(chatHistory) {
+            const chatMessages = document.getElementById('chatMessages');
+
+            if (!chatHistory || chatHistory.length === 0) {
+                chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">No conversation history yet</div>';
+                return;
+            }
+
+            let html = '';
+            chatHistory.forEach(message => {
+                const messageClass = message.message_type.toLowerCase();
+                const messageTypeDisplay = message.message_type === 'USER' ? 'You' :
+                    message.message_type === 'AGENT' ? 'Drone' :
+                        'Tool';
+
+                html += `
+                    <div class="chat-message ${messageClass}">
+                        <div class="message-type">${messageTypeDisplay}</div>
+                        <div class="message-content">${escapeHtml(message.content)}</div>
+                    </div>
+                `;
+            });
+
+            chatMessages.innerHTML = html;
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Utility function to escape HTML characters
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Handle drone selection (called when a drone is clicked)
@@ -863,17 +1000,18 @@
                 console.log("Using drone data from environment state:", droneDetailData);
                 updateDroneDetailsPanel();
 
-                // Show the details panel
-                console.log("Showing details panel");
+                // Show both panels
+                console.log("Showing details and chat panels");
                 document.getElementById('droneDetails').style.display = 'block';
+                document.getElementById('chatHistory').style.display = 'block';
+
+                // Load chat history for this drone
+                fetchChatHistory();
             } else {
                 console.error("Drone not found in environment data:", droneId);
                 clearSelectedDrone();
                 return;
             }
-
-            // Reset command result display
-            document.getElementById('commandResult').style.display = 'none';
         }
 
         // Open drone creator form with specified drone type

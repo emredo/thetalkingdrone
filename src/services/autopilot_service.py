@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from langchain.chat_models import init_chat_model
 from langchain.prompts import PromptTemplate
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
@@ -219,6 +219,23 @@ class AutoPilotService:
             get_telemetry,
         ]
 
+    def get_chat_history(self) -> List[Dict[str, str]]:
+        """Get the chat history."""
+        messages = []
+        for msg in self.memory:
+            if msg.content == "" or isinstance(msg, ToolMessage):
+                continue
+            if isinstance(msg, HumanMessage):
+                sender = "USER"
+            elif isinstance(msg, AIMessage):
+                sender = "AGENT"
+            elif isinstance(msg, ToolMessage):
+                sender = "TOOL"
+            else:
+                continue
+            messages.append({"message_type": sender, "content": msg.content})
+        return messages
+
     def execute_command(self, command: str) -> Dict[str, Any]:
         """Execute a natural language command via the LangGraph agent."""
         if not self.is_initialized:
@@ -232,6 +249,5 @@ class AutoPilotService:
                 {"messages": self.memory}, {"recursion_limit": 50}
             )
             self.memory = response.get("messages", [])
-            return {"status": "success", "result": self.memory[-1].content}
         except Exception as e:
             raise InvalidCommandException(f"Failed to execute command: {str(e)}")
