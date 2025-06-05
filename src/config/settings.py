@@ -30,6 +30,7 @@ class Settings:
 
     # Default drone model settings
     default_drone_max_speed: float = 0.5
+    default_drone_max_vertical_speed: float = 0.5
     default_drone_max_yaw_rate: float = 9
     default_drone_max_altitude: float = 1.5
     default_drone_weight: float = 0.100

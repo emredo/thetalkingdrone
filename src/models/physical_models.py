@@ -29,6 +29,7 @@ class DroneModel(BaseModel):
     type: DroneType = Field(description="Type of drone")
     max_speed: float = Field(description="Maximum speed in m/s")
     max_yaw_rate: float = Field(description="Maximum yaw rate in degrees/s")
+    max_vertical_speed: float = Field(description="Maximum vertical speed in m/s")
     max_altitude: float = Field(description="Maximum altitude in meters")
     weight: float = Field(description="Weight in kg")
     dimensions: tuple[float, float, float] = Field(

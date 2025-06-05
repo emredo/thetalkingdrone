@@ -10,6 +10,7 @@ from cflib.positioning.motion_commander import MotionCommander
 
 from src.models.physical_models import (
     DroneData,
+    DroneState,
 )  # Assuming Obstacle might be needed
 from src.services.drone_base import (  # Assuming Location is also needed
     DroneServiceBase,
@@ -33,17 +34,9 @@ class CrazyFlieService(DroneServiceBase):
         self._scf: Optional[SyncCrazyflie] = None
         self._mc: Optional[MotionCommander] = None
         self._is_connected = False
-        self._current_location = Location(x=0, y=0, z=0)  # Initial placeholder
-        self._telemetry_data: Dict[str, Any] = {
-            "state": "idle",  # internal state representation
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0,
-            "battery": None,
-        }
-
         # Suppress deprecation warnings from cflib
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+        self.start_service()
 
     # Implement ABC methods
     def update(self) -> None:
@@ -135,13 +128,12 @@ class CrazyFlieService(DroneServiceBase):
             commander = self._scf.cf.high_level_commander
             commander.takeoff(altitude, duration)
             time.sleep(duration + 0.5)
-            self._current_location.z = altitude
-            self._telemetry_data["state"] = "flying"
-            self._telemetry_data["z"] = altitude
+            self.drone.telemetry.position.z = altitude
+            self.drone.state = DroneState.FLYING
             logger.info("Takeoff successful.")
         except Exception as e:
             logger.error(f"Takeoff failed: {e}")
-            self._telemetry_data["state"] = "error"
+            self.drone.state = DroneState.EMERGENCY
             raise RuntimeError(f"Takeoff failed: {e}")
 
     def land(self) -> None:
@@ -161,13 +153,12 @@ class CrazyFlieService(DroneServiceBase):
             time.sleep(duration + 0.5)
             # For safety, an additional stop might be good, or ensure it powers down motors
             # commander.stop() # This stops all motion
-            self._current_location.z = 0.0
-            self._telemetry_data["state"] = "idle"
-            self._telemetry_data["z"] = self._current_location.z
+            self.drone.telemetry.position.z = 0.0
+            self.drone.state = DroneState.IDLE
             logger.info("Landing successful.")
         except Exception as e:
             logger.error(f"Landing failed: {e}")
-            self._telemetry_data["state"] = "error"
+            self.drone.state = DroneState.EMERGENCY
             raise RuntimeError(f"Landing failed: {e}")
 
     def move_global(

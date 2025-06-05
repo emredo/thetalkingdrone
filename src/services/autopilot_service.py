@@ -156,7 +156,7 @@ class AutoPilotService:
             """Command the drone to take off."""
             try:
                 self.drone_service.take_off()
-                return "Drone taking off to 1 meter"
+                return "Drone successfully took off"
             except Exception as e:
                 return f"Take off failed: {str(e)}"
 
@@ -165,7 +165,7 @@ class AutoPilotService:
             """Command the drone to land."""
             try:
                 self.drone_service.land()
-                return "Drone landing"
+                return "Drone successfully landed"
             except Exception as e:
                 return f"Landing failed: {str(e)}"
 

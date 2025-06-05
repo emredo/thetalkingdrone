@@ -91,7 +91,6 @@ class SimulationDroneService(DroneServiceBase):
     def take_off(self) -> None:
         """Command drone to take off to specified altitude."""
         target_altitude = 1
-        vertical_speed = 0.25  # meters per second
 
         # Check if drone can take off
         if self.drone.state not in [DroneState.IDLE]:
@@ -107,7 +106,9 @@ class SimulationDroneService(DroneServiceBase):
 
         # Calculate time needed for takeoff
         altitude_difference = target_altitude - self.drone.telemetry.position.z
-        takeoff_time = altitude_difference / vertical_speed  # Time in seconds
+        takeoff_time = (
+            altitude_difference / self.drone.model.max_vertical_speed
+        )  # Time in seconds
 
         # Calculate fuel required for takeoff
         estimated_time_minutes = takeoff_time / 60
@@ -124,7 +125,7 @@ class SimulationDroneService(DroneServiceBase):
         self.drone.state = DroneState.TAKING_OFF
 
         # Set vertical speed
-        self.drone.telemetry.speed = vertical_speed
+        self.drone.telemetry.speed = self.drone.model.max_vertical_speed
 
         # Calculate the number of steps based on a reasonable update interval
         update_interval = 0.1  # seconds
@@ -203,7 +204,6 @@ class SimulationDroneService(DroneServiceBase):
 
     def land(self) -> None:
         """Command drone to land."""
-        vertical_speed = 0.25  # meters per second
         target_altitude = 0.1  # Final altitude after landing
 
         if self.drone.state not in [DroneState.FLYING, DroneState.EMERGENCY]:
@@ -213,7 +213,9 @@ class SimulationDroneService(DroneServiceBase):
 
         # Calculate time needed for landing
         altitude_difference = self.drone.telemetry.position.z - target_altitude
-        landing_time = altitude_difference / vertical_speed  # Time in seconds
+        landing_time = (
+            altitude_difference / self.drone.model.max_vertical_speed
+        )  # Time in seconds
 
         # Calculate fuel required for landing
         estimated_time_minutes = landing_time / 60
@@ -232,7 +234,7 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.state = DroneState.LANDING
 
         # Set vertical speed (negative for descent)
-        self.drone.telemetry.speed = vertical_speed
+        self.drone.telemetry.speed = self.drone.model.max_vertical_speed
 
         # Calculate the number of steps based on a reasonable update interval
         update_interval = 0.1  # seconds
