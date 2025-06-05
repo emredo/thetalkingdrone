@@ -34,35 +34,8 @@ class SimulationDroneService(DroneServiceBase):
     def update(self) -> None:
         """Update drone state based on elapsed time."""
         current_time = time.time()
-        elapsed_time = current_time - self._last_update_time
+        # elapsed_time = current_time - self._last_update_time
         self._last_update_time = current_time
-
-        # Consume fuel when drone is not idle
-        if self.drone.telemetry.state != DroneState.IDLE:
-            # Calculate fuel consumption based on state
-            fuel_consumption_factor = 1.0  # Default factor
-
-            if self.drone.telemetry.state == DroneState.FLYING:
-                # Higher consumption when flying based on current speed
-                speed_factor = self.drone.telemetry.speed / self.drone.model.max_speed
-                fuel_consumption_factor = 1.0 + (
-                    speed_factor * 0.5
-                )  # Up to 50% more consumption at max speed
-            elif self.drone.telemetry.state == DroneState.TAKING_OFF:
-                fuel_consumption_factor = 1.2  # 20% more consumption during takeoff
-            elif self.drone.telemetry.state == DroneState.LANDING:
-                fuel_consumption_factor = 1.1  # 10% more consumption during landing
-
-            fuel_consumed = (
-                (elapsed_time / 60)
-                * self.drone.model.fuel_consumption_rate
-                * fuel_consumption_factor
-            )
-            self.drone.fuel_level = max(0, self.drone.fuel_level - fuel_consumed)
-
-            # If out of fuel, emergency mode
-            if self.drone.fuel_level <= 0:
-                self.drone.telemetry.state = DroneState.EMERGENCY
 
     def start_service(self) -> None:
         """Start the drone update thread."""
@@ -124,9 +97,6 @@ class SimulationDroneService(DroneServiceBase):
         # Set state to taking off
         self.drone.telemetry.state = DroneState.TAKING_OFF
 
-        # Set vertical speed
-        self.drone.telemetry.speed = self.drone.model.max_vertical_speed
-
         # Calculate the number of steps based on a reasonable update interval
         update_interval = 0.1  # seconds
         num_steps = int(takeoff_time / update_interval)
@@ -158,8 +128,8 @@ class SimulationDroneService(DroneServiceBase):
 
                 new_telemetry = Telemetry(
                     position=new_location,
-                    speed=self.drone.telemetry.speed,
                     heading=self.drone.telemetry.heading,
+                    state=self.drone.telemetry.state,
                 )
 
                 # Validate the new location
@@ -185,15 +155,14 @@ class SimulationDroneService(DroneServiceBase):
             )
             final_telemetry = Telemetry(
                 position=final_location,
-                speed=self.drone.telemetry.speed,
                 heading=self.drone.telemetry.heading,
+                state=self.drone.telemetry.state,
             )
             self.environment.validate_location(final_telemetry)
             self.drone.telemetry = final_telemetry
 
             # Change state to flying and reset speed
             self.drone.telemetry.state = DroneState.FLYING
-            self.drone.telemetry.speed = 0.0
 
         except OutOfBoundsException as e:
             self.drone.telemetry.state = DroneState.EMERGENCY
@@ -234,7 +203,7 @@ class SimulationDroneService(DroneServiceBase):
             self.drone.telemetry.state = DroneState.LANDING
 
         # Set vertical speed (negative for descent)
-        self.drone.telemetry.speed = self.drone.model.max_vertical_speed
+        self.drone.model.max_vertical_speed
 
         # Calculate the number of steps based on a reasonable update interval
         update_interval = 0.1  # seconds
@@ -267,8 +236,8 @@ class SimulationDroneService(DroneServiceBase):
 
                 new_telemetry = Telemetry(
                     position=new_location,
-                    speed=self.drone.telemetry.speed,
                     heading=self.drone.telemetry.heading,
+                    state=self.drone.telemetry.state,
                 )
 
                 # Validate the new location
@@ -297,15 +266,14 @@ class SimulationDroneService(DroneServiceBase):
             )
             final_telemetry = Telemetry(
                 position=final_location,
-                speed=self.drone.telemetry.speed,
                 heading=self.drone.telemetry.heading,
+                state=self.drone.telemetry.state,
             )
             self.environment.validate_location(final_telemetry)
             self.drone.telemetry = final_telemetry
 
             # Change state to idle and reset speed
             self.drone.telemetry.state = DroneState.IDLE
-            self.drone.telemetry.speed = 0.0
 
         except OutOfBoundsException as e:
             self.drone.telemetry.state = DroneState.EMERGENCY
@@ -323,7 +291,7 @@ class SimulationDroneService(DroneServiceBase):
 
         target_telemetry = Telemetry(
             position=target_location,
-            speed=self.drone.telemetry.speed,
+            state=self.drone.telemetry.state,
             heading=self.drone.telemetry.heading,
         )
         # Check target location validity
@@ -360,9 +328,6 @@ class SimulationDroneService(DroneServiceBase):
         dy = (target_location.y - self.drone.telemetry.position.y) / num_steps
         dz = (target_location.z - self.drone.telemetry.position.z) / num_steps
 
-        # Set current drone speed to max speed
-        self.drone.telemetry.speed = self.drone.model.max_speed
-
         # Move the drone step by step
         for step in range(num_steps):
             if (
@@ -387,9 +352,6 @@ class SimulationDroneService(DroneServiceBase):
 
         # Ensure we reach exactly the target location
         self.drone.telemetry.position = target_location
-
-        # Reset speed after reaching destination
-        self.drone.telemetry.speed = 0.0
 
     def turn_global(self, heading: float) -> None:
         """Command drone to turn to a target heading angle."""
@@ -456,7 +418,7 @@ class SimulationDroneService(DroneServiceBase):
                 # Update telemetry with new heading
                 new_telemetry = Telemetry(
                     position=self.drone.telemetry.position,
-                    speed=self.drone.telemetry.speed,
+                    state=self.drone.telemetry.state,
                     heading=new_heading,
                 )
 
@@ -474,7 +436,7 @@ class SimulationDroneService(DroneServiceBase):
             # Ensure we reach exactly the target heading
             final_telemetry = Telemetry(
                 position=self.drone.telemetry.position,
-                speed=self.drone.telemetry.speed,
+                state=self.drone.telemetry.state,
                 heading=target_angle,
             )
             self.drone.telemetry = final_telemetry

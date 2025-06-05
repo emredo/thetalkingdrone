@@ -325,10 +325,6 @@
                 <div class="detail-value" id="dronePosition"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Speed:</div>
-                <div class="detail-value" id="droneSpeed"></div>
-            </div>
-            <div class="detail-row">
                 <div class="detail-label">Heading:</div>
                 <div class="detail-value" id="droneHeading"></div>
             </div>
@@ -525,8 +521,6 @@
             document.getElementById('droneType').textContent = droneDetailData.model.type;
             document.getElementById('dronePosition').textContent =
                 `(${droneDetailData.telemetry.position.x.toFixed(1)}, ${droneDetailData.telemetry.position.y.toFixed(1)}, ${droneDetailData.telemetry.position.z.toFixed(1)})`;
-            document.getElementById('droneSpeed').textContent =
-                `${droneDetailData.telemetry.speed.toFixed(1)} m/s (max: ${droneDetailData.model.max_speed.toFixed(1)} m/s)`;
             document.getElementById('droneHeading').textContent =
                 `${droneDetailData.telemetry.heading.toFixed(1)}°`;
 
