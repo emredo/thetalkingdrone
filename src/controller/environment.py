@@ -65,10 +65,6 @@ def restart_simulation():
         environment = get_environment_instance()
         environment.reset()
 
-        # Clear all drone instances
-        environment.drones.clear()
-        environment.autopilot_agents.clear()
-
         return {
             "status": "success",
             "message": "Simulation restarted. Environment reset and all drones removed.",

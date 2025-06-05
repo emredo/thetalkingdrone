@@ -6,11 +6,14 @@ from typing import Optional
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-from cflib.positioning.motion_commander import MotionCommander
+from cflib.positioning.position_hl_commander import PositionHlCommander
 
 from src.constant.constants import (
     CRAZYFLIE_CONTOL_LOOPS_MAX_ITER,
-    CRAZYFLIE_ERROR_DELTA,
+    CRAZYFLIE_DISTANCE_ERROR_DELTA,
+    CRAZYFLIE_HEADING_ERROR_DELTA,
+    CRAZYFLIE_POSITION_HL_COMMANDER_DEFAULT_HEIGHT,
+    CRAZYFLIE_POSITION_HL_COMMANDER_DEFAULT_VELOCITY,
     CRAZYFLIE_TAKEOFF_ALTITUDE,
 )
 from src.models.exceptions import DroneNotOperationalException
@@ -37,7 +40,7 @@ class CrazyFlieService(DroneServiceBase):
         logger.info(f"Initializing CrazyFlieService for URI: {self._uri}")
         self._cf = Crazyflie(rw_cache="./cache")
         self._scf: Optional[SyncCrazyflie] = None
-        self._mc: Optional[MotionCommander] = None
+        self.position_hl_commander: Optional[PositionHlCommander] = None
         self._is_connected = False
         # Suppress deprecation warnings from cflib
         warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -46,11 +49,12 @@ class CrazyFlieService(DroneServiceBase):
     # Implement ABC methods
     def update(self) -> None:
         """Update the drone state based on elapsed time."""
-        # current_time = time.time()
         # elapsed_time = current_time - self._last_update_time
-        # self._last_update_time = current_time
-        # This method can be expanded to fetch telemetry or check status periodically
-        pass
+        self._last_update_time = time.time()
+        pose = self.position_hl_commander.get_position()
+        self.drone.telemetry.position.x = pose[0]
+        self.drone.telemetry.position.y = pose[1]
+        self.drone.telemetry.position.z = pose[2]
 
     def start_service(self) -> None:
         logger.info("Starting CrazyFlie service...")
@@ -62,7 +66,14 @@ class CrazyFlieService(DroneServiceBase):
             self._scf = SyncCrazyflie(self._uri, cf=self._cf)
             self._scf.open_link()
             self._is_connected = True
-            # self._mc = MotionCommander(self._scf, default_height=DEFAULT_HEIGHT)
+            self.position_hl_commander = PositionHlCommander(
+                self._scf.cf,
+                x=self.drone.telemetry.position.x,
+                y=self.drone.telemetry.position.y,
+                z=self.drone.telemetry.position.z,
+                default_velocity=CRAZYFLIE_POSITION_HL_COMMANDER_DEFAULT_VELOCITY,
+                default_height=CRAZYFLIE_POSITION_HL_COMMANDER_DEFAULT_HEIGHT,
+            )
             logger.info(f"Successfully connected to Crazyflie at {self._uri}")
 
             # Start the drone update thread
@@ -127,15 +138,20 @@ class CrazyFlieService(DroneServiceBase):
         duration = CRAZYFLIE_TAKEOFF_ALTITUDE / self.drone.model.max_vertical_speed
         logger.info(f"Commanding takeoff to {CRAZYFLIE_TAKEOFF_ALTITUDE}m")
         try:
+            # self.position_hl_commander.take_off(
+            #     height=CRAZYFLIE_TAKEOFF_ALTITUDE,
+            #     velocity=self.drone.model.max_vertical_speed,
+            # )
             # Using high_level_commander for takeoff
-            commander = self._scf.cf.high_level_commander
-            commander.takeoff(CRAZYFLIE_TAKEOFF_ALTITUDE, duration)
+            self._scf.cf.high_level_commander.takeoff(
+                CRAZYFLIE_TAKEOFF_ALTITUDE, duration
+            )
             self.drone.state = DroneState.TAKING_OFF
             for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
                 time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
                 if (
                     abs(self.drone.telemetry.position.z - CRAZYFLIE_TAKEOFF_ALTITUDE)
-                    <= CRAZYFLIE_ERROR_DELTA
+                    <= CRAZYFLIE_DISTANCE_ERROR_DELTA
                 ):
                     break
             self.drone.state = DroneState.FLYING
@@ -162,7 +178,10 @@ class CrazyFlieService(DroneServiceBase):
             self.drone.state = DroneState.LANDING
             for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
                 time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
-                if abs(self.drone.telemetry.position.z) <= CRAZYFLIE_ERROR_DELTA:
+                if (
+                    abs(self.drone.telemetry.position.z)
+                    <= CRAZYFLIE_DISTANCE_ERROR_DELTA
+                ):
                     break
             commander.stop()
             self.drone.state = DroneState.IDLE
@@ -213,7 +232,7 @@ class CrazyFlieService(DroneServiceBase):
                     calc_euclidean_distance(
                         self.drone.telemetry.position, target_location
                     )
-                    <= CRAZYFLIE_ERROR_DELTA
+                    <= CRAZYFLIE_DISTANCE_ERROR_DELTA
                 ):
                     break
             self.drone.state = DroneState.FLYING
@@ -230,6 +249,33 @@ class CrazyFlieService(DroneServiceBase):
         if not self._is_running:  # Added check
             logger.warning("Cannot turn, service not running.")  # Added log
             raise RuntimeError("Service not running, cannot turn.")
+
+        if self.drone.state not in [DroneState.FLYING, DroneState.IDLE]:
+            raise DroneNotOperationalException(
+                f"Cannot turn in {self.drone.state} state"
+            )
+
+        duration = max(
+            2, abs(self.drone.telemetry.heading - angle) / self.drone.model.max_yaw_rate
+        )
+        commander = self._scf.cf.high_level_commander
+        commander.go_to(
+            self.drone.telemetry.position.x,
+            self.drone.telemetry.position.y,
+            self.drone.telemetry.position.z,
+            angle,
+            duration,
+        )
+        for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
+            time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
+            if (
+                abs(self.drone.telemetry.heading - angle)
+                <= CRAZYFLIE_HEADING_ERROR_DELTA
+                and self.drone.state == DroneState.FLYING
+            ):
+                break
+        self.drone.state = DroneState.FLYING
+        logger.info(f"Successfully turned to {angle} degrees")
 
         logger.info(f"Commanding drone to turn {angle} degrees")
 
@@ -252,3 +298,11 @@ class CrazyFlieService(DroneServiceBase):
         logger.info(
             f"Commanding drone to move {relative_location.x}, {relative_location.y}, {relative_location.z}"
         )
+
+        target_location = Location(
+            self.drone.telemetry.position.x + relative_location.x,
+            self.drone.telemetry.position.y + relative_location.y,
+            self.drone.telemetry.position.z + relative_location.z,
+        )
+
+        self.move_global(target_location)

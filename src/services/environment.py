@@ -93,6 +93,14 @@ class EnvironmentService:
         self._stop_event.set()
         if self._time_thread:
             self._time_thread.join(timeout=2.0)
+
+        for drone_id, drone_service in self.drones.items():
+            drone_service.stop_service()
+            logger.info(f"Drone {drone_id} stopped")
+        time.sleep(5)
+        self.drones.clear()
+        self.autopilot_agents.clear()
+
         self._is_running = False
         logger.info("Environment simulation thread stopped")
 

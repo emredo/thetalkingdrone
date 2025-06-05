@@ -64,10 +64,6 @@ class DroneServiceBase(ABC):
             self._stop_event.wait(THREAD_UPDATE_INTERVAL)
         logger.info(f"DroneData drone loop stopped for {self.drone.model.name}")
 
-    def __del__(self):
-        """Destructor to ensure resources are cleaned up."""
-        self.stop_service()
-
     def get_telemetry(self) -> Telemetry:
         """Get current drone telemetry data."""
         return self.drone.telemetry
