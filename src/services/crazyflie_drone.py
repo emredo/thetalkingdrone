@@ -1,13 +1,19 @@
 import threading
 import time
 import warnings
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.motion_commander import MotionCommander
 
+from src.constant.constants import (
+    CRAZYFLIE_CONTOL_LOOPS_MAX_ITER,
+    CRAZYFLIE_ERROR_DELTA,
+    CRAZYFLIE_TAKEOFF_ALTITUDE,
+)
+from src.models.exceptions import DroneNotOperationalException
 from src.models.physical_models import (
     DroneData,
     DroneState,
@@ -16,9 +22,8 @@ from src.services.drone_base import (  # Assuming Location is also needed
     DroneServiceBase,
     Location,
 )
+from src.utils.calc_euclidean import calc_euclidean_distance
 from src.utils.logger import logger
-
-DEFAULT_HEIGHT = 0.3  # Default height for simple takeoff/land
 
 
 class CrazyFlieService(DroneServiceBase):
@@ -119,16 +124,20 @@ class CrazyFlieService(DroneServiceBase):
             logger.warning("Cannot take_off, service not running.")  # Added log
             raise RuntimeError("Service not running, cannot take_off.")
 
-        altitude = DEFAULT_HEIGHT
-        duration = 2.0
-
-        logger.info(f"Commanding takeoff to {altitude}m")
+        duration = CRAZYFLIE_TAKEOFF_ALTITUDE / self.drone.model.max_vertical_speed
+        logger.info(f"Commanding takeoff to {CRAZYFLIE_TAKEOFF_ALTITUDE}m")
         try:
             # Using high_level_commander for takeoff
             commander = self._scf.cf.high_level_commander
-            commander.takeoff(altitude, duration)
-            time.sleep(duration + 0.5)
-            self.drone.telemetry.position.z = altitude
+            commander.takeoff(CRAZYFLIE_TAKEOFF_ALTITUDE, duration)
+            self.drone.state = DroneState.TAKING_OFF
+            for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
+                time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
+                if (
+                    abs(self.drone.telemetry.position.z - CRAZYFLIE_TAKEOFF_ALTITUDE)
+                    <= CRAZYFLIE_ERROR_DELTA
+                ):
+                    break
             self.drone.state = DroneState.FLYING
             logger.info("Takeoff successful.")
         except Exception as e:
@@ -142,18 +151,20 @@ class CrazyFlieService(DroneServiceBase):
         if not self._is_running:  # Added check
             logger.warning("Cannot land, service not running.")  # Added log
             raise RuntimeError("Service not running, cannot land.")
-
-        height = 0.0
-        duration = 2.0
+        duration = (
+            self.drone.telemetry.position.z
+        ) / self.drone.model.max_vertical_speed
 
         logger.info("Commanding drone to land.")
         try:
             commander = self._scf.cf.high_level_commander
-            commander.land(height, duration)
-            time.sleep(duration + 0.5)
-            # For safety, an additional stop might be good, or ensure it powers down motors
-            # commander.stop() # This stops all motion
-            self.drone.telemetry.position.z = 0.0
+            commander.land(0, duration)
+            self.drone.state = DroneState.LANDING
+            for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
+                time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
+                if abs(self.drone.telemetry.position.z) <= CRAZYFLIE_ERROR_DELTA:
+                    break
+            commander.stop()
             self.drone.state = DroneState.IDLE
             logger.info("Landing successful.")
         except Exception as e:
@@ -161,92 +172,57 @@ class CrazyFlieService(DroneServiceBase):
             self.drone.state = DroneState.EMERGENCY
             raise RuntimeError(f"Landing failed: {e}")
 
-    def move_global(
-        self, target_location: Location, duration: float = 3.0, yaw: float = 0.0
-    ) -> None:
+    def move_global(self, target_location: Location) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")
         if not self._is_running:  # Added check
             logger.warning("Cannot move_to, service not running.")  # Added log
             raise RuntimeError("Service not running, cannot move_to.")
 
+        if self.drone.state not in [DroneState.FLYING, DroneState.IDLE]:
+            raise DroneNotOperationalException(
+                f"Cannot move in {self.drone.state} state"
+            )
+
+        target_euc_distance = calc_euclidean_distance(
+            self.drone.telemetry.position, target_location
+        )
+        duration = target_euc_distance / self.drone.model.max_speed
         logger.info(
             f"Commanding drone to move to {target_location}, duration: {duration}s"
         )
         try:
             commander = self._scf.cf.high_level_commander
             # Ensure drone is flying before moving to a new XY location
-            if self._current_location.z <= 0.1:  # check if on the ground
-                logger.warning(
-                    "Drone is on the ground. Taking off to default height before move_to."
-                )
+            if self.drone.state == DroneState.IDLE:  # check if on the ground
+                logger.warning("Drone is IDLE position. Taking off before move_global.")
                 self.take_off()
 
-            current_x, current_y, current_z = (
-                self._current_location.x,
-                self._current_location.y,
-                self._current_location.z,
-            )
-            target_x, target_y, target_z = (
+            commander.go_to(
                 target_location.x,
                 target_location.y,
                 target_location.z,
+                self.drone.telemetry.heading,
+                duration,
             )
 
-            # If only Z changes, use go_to with current XY. Otherwise, it's a 3D move.
-            # The high_level_commander.go_to is relative by default if not in absolute mode
-            # We'll assume absolute coordinates for consistency with DroneServiceABC
-
-            # For simplicity, we'll use absolute go_to.
-            # Note: Crazyflie's coordinate system might need careful handling (e.g., global vs local frame)
-            # This example assumes target_location is in the Crazyflie's frame of reference.
-            # The high_level_commander expects absolute world coordinates.
-
-            logger.info(
-                f"Moving from ({current_x}, {current_y}, {current_z}) to ({target_x}, {target_y}, {target_z})"
-            )
-
-            commander.go_to(
-                target_x, target_y, target_z, yaw, duration
-            )  # X, Y, Z, Yaw, Duration
-            time.sleep(duration + 0.5)  # Wait for movement
-
-            self._current_location = target_location
-            self._telemetry_data["x"] = target_location.x
-            self._telemetry_data["y"] = target_location.y
-            self._telemetry_data["z"] = target_location.z
-            self._telemetry_data["state"] = "flying"  # Assuming it's still flying
+            logger.info(f"Moving to {target_location}")
+            for _ in range(CRAZYFLIE_CONTOL_LOOPS_MAX_ITER):
+                time.sleep(duration / CRAZYFLIE_CONTOL_LOOPS_MAX_ITER)
+                if (
+                    calc_euclidean_distance(
+                        self.drone.telemetry.position, target_location
+                    )
+                    <= CRAZYFLIE_ERROR_DELTA
+                ):
+                    break
+            self.drone.state = DroneState.FLYING
             logger.info(f"Successfully moved to {target_location}")
 
         except Exception as e:
             logger.error(f"Move_to failed: {e}")
-            self._telemetry_data["state"] = "error"
+            self.drone.state = DroneState.EMERGENCY
             raise RuntimeError(f"Move_to failed: {e}")
-
-    def get_telemetry(self) -> Dict[str, Any]:
-        if not self._is_connected:
-            # Return last known if not connected, or raise error
-            logger.warning("Returning last known telemetry; Crazyflie not connected.")
-            # Add a timestamp to telemetry to indicate freshness
-            if "timestamp" not in self._telemetry_data:
-                self._telemetry_data["timestamp"] = 0  # initialize if not present
-            self._telemetry_data["timestamp"] = time.time()
-            return self._telemetry_data
-
-        # Ideally, fetch live data here using log_config or other cflib mechanisms
-        # For this example, we're updating telemetry_data in other methods.
-        # A more robust implementation would involve cflib's logging framework.
-        # e.g., position, battery level, etc.
-        # self._telemetry_data["battery"] = self._get_battery_level()
-        # self._telemetry_data["position"] = self._get_current_position_estimate()
-
-        # Simulate updating location from internal state for now
-        self._telemetry_data["x"] = self._current_location.x
-        self._telemetry_data["y"] = self._current_location.y
-        self._telemetry_data["z"] = self._current_location.z
-        self._telemetry_data["timestamp"] = time.time()
-
-        return self._telemetry_data
 
     def turn_global(self, angle: float) -> None:
         if not self._is_connected or not self._scf:

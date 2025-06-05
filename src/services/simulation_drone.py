@@ -385,9 +385,6 @@ class SimulationDroneService(DroneServiceBase):
         # Reset speed after reaching destination
         self.drone.telemetry.speed = 0.0
 
-    def get_telemetry(self) -> Telemetry:
-        return self.drone.telemetry
-
     def turn_global(self, heading: float) -> None:
         """Command drone to turn to a target heading angle."""
         if self.drone.state != DroneState.FLYING:

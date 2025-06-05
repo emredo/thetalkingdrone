@@ -68,6 +68,10 @@ class DroneServiceBase(ABC):
         """Destructor to ensure resources are cleaned up."""
         self.stop_service()
 
+    def get_telemetry(self) -> Telemetry:
+        """Get current drone telemetry data."""
+        return self.drone.telemetry
+
     @abstractmethod
     def update(self) -> None:
         """Update the drone state based on elapsed time."""
@@ -96,11 +100,6 @@ class DroneServiceBase(ABC):
     @abstractmethod
     def move_global(self, target_location: Location) -> None:
         """Command drone to move to a target location."""
-        pass
-
-    @abstractmethod
-    def get_telemetry(self) -> Telemetry:
-        """Get current drone telemetry data."""
         pass
 
     @abstractmethod
