@@ -28,6 +28,7 @@ from src.services.drone_base import (  # Assuming Location is also needed
 from src.utils.calc_euclidean import calc_euclidean_distance
 from src.utils.logger import logger
 
+#radio://0/80/2M/E7E7E7E7C3
 
 class CrazyFlieService(DroneServiceBase):
     """
