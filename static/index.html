@@ -634,23 +634,52 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
-            // Draw boundary coordinates
+            // Draw boundary coordinates and axis labels
             const bounds = environmentData.environment.features.boundaries;
             ctx.fillStyle = '#666';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
 
-            // Top-left corner
+            // Corner coordinates (X is vertical, Y is horizontal)
+            // Top-left corner (origin)
             ctx.fillText('(0, 0)', 30, 20);
 
-            // Top-right corner
-            ctx.fillText(`(${bounds[0]}, 0)`, canvas.width - 30, 20);
+            // Top-right corner (X=0, Y=max)
+            ctx.fillText(`(0, ${bounds[1]})`, canvas.width - 30, 20);
 
-            // Bottom-left corner
-            ctx.fillText(`(0, ${bounds[1]})`, 30, canvas.height - 10);
+            // Bottom-left corner (X=max, Y=0)
+            ctx.fillText(`(${bounds[0]}, 0)`, 30, canvas.height - 10);
 
-            // Bottom-right corner
+            // Bottom-right corner (X=max, Y=max)
             ctx.fillText(`(${bounds[0]}, ${bounds[1]})`, canvas.width - 30, canvas.height - 10);
+
+            // Add axis labels for clarity
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+
+            // X-axis label (vertical axis) - positioned outside left edge
+            ctx.save();
+            ctx.translate(-10, canvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillText('X-axis (vertical)', 0, 0);
+            ctx.restore();
+
+            // Y-axis label (horizontal axis) - positioned outside bottom edge
+            ctx.textAlign = 'center';
+            ctx.fillText('Y-axis (horizontal)', canvas.width / 2, canvas.height + 25);
+
+            // Add directional arrows and labels
+            ctx.fillStyle = '#666';
+            ctx.font = 'bold 18px Arial';
+
+            // X-axis direction (downward)
+            ctx.textAlign = 'left';
+            ctx.fillText('X+ ↓', 5, canvas.height / 2 + 15);
+
+            // Y-axis direction (rightward)
+            ctx.textAlign = 'center';
+            ctx.fillText('Y+ →', canvas.width / 2 + 30, 35);
 
             // Draw grid (every 10 units)
             ctx.strokeStyle = '#eee';
