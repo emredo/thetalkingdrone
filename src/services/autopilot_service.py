@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-
+import warnings
 from langchain.chat_models import init_chat_model
 from langchain.prompts import PromptTemplate
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -13,6 +13,9 @@ from src.models import (
 )
 from src.models.physical_models import BuildingInformation, Location
 from src.services.drone_base import DroneServiceBase
+
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 SYSTEM_PROMPT = """You are an intelligent drone autopilot agent designed to interpret natural language commands and execute precise drone operations in a simulated environment. You have complete control over a simulation drone through a comprehensive set of specialized tools.
 

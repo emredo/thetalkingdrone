@@ -52,7 +52,6 @@ class Location(BaseModel):
 class Telemetry(BaseModel):
     """Model containing telemetry data."""
 
-    speed: float = Field(default=0.0, description="Speed in m/s")
     heading: float = Field(default=0.0, description="Heading in degrees")
     position: Location = Field(description="Position in 3D space")
     state: DroneState = Field(description="State of the drone")

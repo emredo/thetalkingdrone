@@ -490,8 +490,8 @@
 
                 // Set scale factors based on environment boundaries
                 const bounds = environmentData.environment.features.boundaries;
-                scaleX = canvas.width / bounds[0];
-                scaleY = canvas.height / bounds[1];
+                scaleX = canvas.height / bounds[0];
+                scaleY = canvas.width / bounds[1];
 
                 renderEnvironment();
 
