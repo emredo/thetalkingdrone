@@ -1,3 +1,4 @@
+import time
 import uuid
 from typing import Any, Dict
 
@@ -164,3 +165,15 @@ def create_crazyflie_drone(
         return drone_service.drone.drone_id
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{drone_id}/remove-drone/")
+def remove_drone(drone_id: str):
+    """Remove a drone from the environment."""
+    environment = get_environment_instance()
+    service = environment.drones[drone_id]
+    service.stop_service()
+    time.sleep(5)
+    environment.drones.pop(drone_id)
+    environment.autopilot_agents.pop(drone_id)
+    return {"status": "success", "message": "Drone removed successfully"}

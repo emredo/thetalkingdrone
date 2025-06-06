@@ -353,6 +353,8 @@
             <div>
                 <button onclick="takeOff()">Take Off</button>
                 <button onclick="land()">Land</button>
+                <button onclick="deleteDrone()" style="background-color: #dc3545; margin-left: 10px;">Delete
+                    Drone</button>
             </div>
             <div style="margin-top: 10px;">
                 <input type="number" id="targetX" placeholder="X" style="width: 60px;">
@@ -775,6 +777,39 @@
             } catch (error) {
                 console.error('Error turning drone relative to body:', error);
                 alert(`Error turning drone relative to body: ${error.message}`);
+            }
+        }
+
+        // Delete drone
+        async function deleteDrone() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            // Confirm deletion
+            const droneName = droneDetailData.model.name;
+            if (!confirm(`Are you sure you want to delete drone "${droneName}" (ID: ${selectedDroneId})? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/environment/${selectedDroneId}/remove-drone/`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete drone');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Clear the selected drone since it no longer exists
+                clearSelectedDrone();
+
+                // Refresh the data to update the display
+                fetchData();
+
+                alert(`Drone "${droneName}" has been successfully deleted.`);
+            } catch (error) {
+                console.error('Error deleting drone:', error);
+                alert(`Error deleting drone: ${error.message}`);
             }
         }
 
