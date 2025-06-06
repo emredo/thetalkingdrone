@@ -1,4 +1,3 @@
-import threading
 import time
 import warnings
 from typing import Optional
@@ -97,8 +96,6 @@ class CrazyFlieService(DroneServiceBase):
 
             # Start the drone update thread
             self._stop_event.clear()
-            self._drone_thread = threading.Thread(target=self._drone_loop, daemon=True)
-            self._drone_thread.start()
             self._is_running = True
             logger.info(f"CrazyFlie service thread started for {self._uri}")
 
@@ -119,22 +116,15 @@ class CrazyFlieService(DroneServiceBase):
             # Proceed with other cleanup if necessary, but thread part is done
         else:
             self._stop_event.set()
-            if self._drone_thread:
-                logger.info(
-                    f"Waiting for CrazyFlie service thread to stop for {self._uri}..."
-                )
-                self._drone_thread.join(timeout=2.0)
-                if self._drone_thread.is_alive():
-                    logger.warning(
-                        f"CrazyFlie service thread for {self._uri} did not stop in time."
-                    )
             self._is_running = False
             logger.info(f"CrazyFlie service thread stopped for {self._uri}.")
 
         if self._scf and self._is_connected:
             try:
+                self.drone.telemetry.state = DroneState.LANDING
                 self.position_hl_commander.land()
-                time.sleep(1)
+                time.sleep(5)
+                self.drone.telemetry.state = DroneState.IDLE
                 self._scf.close_link()
                 logger.info("Crazyflie link closed.")
             except Exception as e:

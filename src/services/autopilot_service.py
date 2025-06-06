@@ -71,6 +71,8 @@ You have access to the following drone control tools:
 - If commands fail, explain the issue and suggest alternatives
 - For complex operations, break them into clear steps
 
+IMPORTANT WARNING: Communicate with the user in the same language as the command.
+
 ## CURRENT STATUS
 {telemetry}
 
@@ -159,7 +161,8 @@ class AutoPilotService:
             """Command the drone to take off."""
             try:
                 self.drone_service.take_off()
-                return "Drone successfully took off"
+                telemetry = self.drone_service.get_telemetry()
+                return f"Operation successfull, drones current telemetry: {str(telemetry.model_dump())}"
             except Exception as e:
                 return f"Take off failed: {str(e)}"
 
@@ -177,7 +180,8 @@ class AutoPilotService:
             """Command the drone to turn at yaw in a specific angle in the body frame. The angle is relative to the current heading. An example ccw is negative and cw is positive."""
             try:
                 self.drone_service.turn_global(angle)
-                return f"Drone turning {angle} degrees"
+                telemetry = self.drone_service.get_telemetry()
+                return f"Operation successfull, drones current telemetry: {str(telemetry.model_dump())}"
             except Exception as e:
                 return f"Turn failed: {str(e)}"
 
@@ -196,7 +200,8 @@ class AutoPilotService:
             try:
                 location = Location(x=x, y=y, z=z)
                 self.drone_service.move_global(location)
-                return f"Drone moving to location ({x}, {y}, {z})"
+                telemetry = self.drone_service.get_telemetry()
+                return f"Operation successfull, drones current telemetry: {str(telemetry.model_dump())}"
             except Exception as e:
                 return f"Move failed: {str(e)}"
 
@@ -206,14 +211,16 @@ class AutoPilotService:
             try:
                 location = Location(x=x, y=y, z=z)
                 self.drone_service.move_global(location)
-                return f"Drone moving to location ({x}, {y}, {z})"
+                telemetry = self.drone_service.get_telemetry()
+                return f"Operation successfull, drones current telemetry: {str(telemetry.model_dump())}"
             except Exception as e:
                 return f"Move failed: {str(e)}"
 
         @tool("get_telemetry")
         def get_telemetry() -> Dict[str, Any]:
             """Get current drone telemetry including position, fuel level, speed, and state."""
-            return self.drone_service.get_telemetry()
+            telemetry = self.drone_service.get_telemetry()
+            return f"Operation successfull, drones current telemetry: {str(telemetry.model_dump())}"
 
         # Return the list of tools
         return [
