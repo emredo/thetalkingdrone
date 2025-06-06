@@ -123,13 +123,12 @@ class AutoPilotService:
         chat_history = ""
         for message in self.memory:
             if isinstance(message, HumanMessage):
-                chat_history += f"Human: {message.content}\n"
-            elif (
-                isinstance(message, AIMessage)
-                and message.content != ""
-                and message.tool_calls is None
-            ):
-                chat_history += f"AI: {message.content}\n"
+                chat_history += f"--------\nHuman: {message.content}\n"
+            elif isinstance(message, AIMessage):
+                chat_history += f"--------\nAI Message: {message.content}\nAI Tool Calls: {message.tool_calls}\n"
+            elif isinstance(message, ToolMessage):
+                chat_history += f"--------\nTool Response: {message.content}\n"
+        print(chat_history)
         return chat_history
 
     def _prepare_prompt(self, state) -> str:
@@ -237,7 +236,11 @@ class AutoPilotService:
         """Get the chat history."""
         messages = []
         for msg in self.memory:
-            if msg.content == "" or isinstance(msg, ToolMessage):
+            if (
+                msg.content == ""
+                or isinstance(msg, ToolMessage)
+                or (isinstance(msg, AIMessage) and msg.tool_calls is not None)
+            ):
                 continue
             if isinstance(msg, HumanMessage):
                 sender = "USER"
@@ -259,9 +262,15 @@ class AutoPilotService:
             # Create a state with the command as a HumanMessage
             self.memory.append(HumanMessage(content=command))
             # Execute the agent with the input state
-            response = self.agent.invoke(
-                {"messages": self.memory}, {"recursion_limit": 10}
-            )
-            self.memory = response.get("messages", [])
+            for update_state in self.agent.stream(
+                input={"messages": self.memory},
+                config={"recursion_limit": 10},
+                stream_mode="updates",
+            ):
+                if "agent" in update_state:
+                    response = update_state["agent"]
+                elif "tools" in update_state:
+                    response = update_state["tools"]
+                self.memory.extend(response.get("messages", []))
         except Exception as e:
             raise InvalidCommandException(f"Failed to execute command: {str(e)}")
