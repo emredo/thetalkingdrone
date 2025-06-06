@@ -22,6 +22,7 @@ from src.models.exceptions import DroneNotOperationalException
 from src.models.physical_models import (
     DroneData,
     DroneState,
+    Telemetry,
 )  # Assuming Obstacle might be needed
 from src.services.drone_base import (  # Assuming Location is also needed
     DroneServiceBase,
@@ -214,6 +215,13 @@ class CrazyFlieService(DroneServiceBase):
             raise DroneNotOperationalException(
                 f"Cannot move in {self.drone.telemetry.state} state"
             )
+        target_telemetry = Telemetry(
+            position=target_location,
+            state=self.drone.telemetry.state,
+            heading=self.drone.telemetry.heading,
+        )
+        # Check target location validity
+        self.environment.validate_location(target_telemetry)
 
         target_euc_distance = calc_euclidean_distance(
             self.drone.telemetry.position, target_location

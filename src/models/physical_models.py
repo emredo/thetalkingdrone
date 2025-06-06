@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
 class DroneState(str, Enum):
@@ -84,19 +84,3 @@ class DroneData(BaseModel):
     fuel_level: float = Field(description="Current fuel level")
     payload: float = Field(default=0.0, description="Current payload weight in kg")
     telemetry: Telemetry = Field(description="Additional telemetry data")
-
-    @validator("fuel_level")
-    def validate_fuel_level(cls, v, values):
-        """Validate that fuel level is not negative and doesn't exceed capacity."""
-        if "model" not in values:
-            return v
-
-        if v < 0:
-            raise ValueError("Fuel level cannot be negative")
-
-        if v > values["model"].fuel_capacity:
-            raise ValueError(
-                f"Fuel level cannot exceed capacity of {values['model'].fuel_capacity}"
-            )
-
-        return v
