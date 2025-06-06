@@ -503,6 +503,9 @@
                 if (selectedDroneId && environmentData.drones && environmentData.drones[selectedDroneId]) {
                     droneDetailData = environmentData.drones[selectedDroneId];
                     updateDroneDetailsPanel();
+                    // Ensure panels remain visible after data refresh
+                    document.getElementById('droneDetails').style.display = 'block';
+                    document.getElementById('chatHistory').style.display = 'block';
                 } else if (selectedDroneId) {
                     // Selected drone no longer exists
                     clearSelectedDrone();
@@ -921,16 +924,17 @@
 
             // Get click coordinates relative to canvas
             const rect = canvas.getBoundingClientRect();
-            const clickX = (event.clientX - rect.left) / scaleX;
-            const clickY = (event.clientY - rect.top) / scaleY;
+            const clickX = (event.clientX - rect.left) / scaleY; // Note: using scaleY for X coordinate
+            const clickY = (event.clientY - rect.top) / scaleX;  // Note: using scaleX for Y coordinate
 
             // Find a drone that was clicked
             let clickedDrone = null;
             const clickRadius = (iconSize / 2) / Math.min(scaleX, scaleY); // Convert icon radius to environment units
 
             for (const drone of Object.values(environmentData.drones)) {
-                const dx = drone.telemetry.position.x - clickX;
-                const dy = drone.telemetry.position.y - clickY;
+                // Match the coordinate system used in rendering: x = drone.y, y = drone.x
+                const dx = drone.telemetry.position.y - clickX;
+                const dy = drone.telemetry.position.x - clickY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance <= clickRadius) {
