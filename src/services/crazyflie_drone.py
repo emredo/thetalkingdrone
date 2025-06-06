@@ -5,8 +5,10 @@ from typing import Optional
 
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
+from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.position_hl_commander import PositionHlCommander
+from cflib.utils.reset_estimator import reset_estimator
 
 from src.constant.constants import (
     CRAZYFLIE_CONTOL_LOOPS_MAX_ITER,
@@ -28,7 +30,8 @@ from src.services.drone_base import (  # Assuming Location is also needed
 from src.utils.calc_euclidean import calc_euclidean_distance
 from src.utils.logger import logger
 
-#radio://0/80/2M/E7E7E7E7C3
+# radio://0/80/2M/E7E7E7E7C3
+
 
 class CrazyFlieService(DroneServiceBase):
     """
@@ -52,10 +55,12 @@ class CrazyFlieService(DroneServiceBase):
         """Update the drone state based on elapsed time."""
         # elapsed_time = current_time - self._last_update_time
         self._last_update_time = time.time()
-        pose = self.position_hl_commander.get_position()
-        self.drone.telemetry.position.x = pose[0]
-        self.drone.telemetry.position.y = pose[1]
-        self.drone.telemetry.position.z = pose[2]
+
+    def state_callback(self, timestamp, data, logconf):
+        self.drone.telemetry.position.x = data["stateEstimate.x"]
+        self.drone.telemetry.position.y = data["stateEstimate.y"]
+        self.drone.telemetry.position.z = data["stateEstimate.z"]
+        self.drone.telemetry.heading = data["stateEstimate.yaw"]
 
     def start_service(self) -> None:
         logger.info("Starting CrazyFlie service...")
@@ -66,6 +71,18 @@ class CrazyFlieService(DroneServiceBase):
             cflib.crtp.init_drivers()
             self._scf = SyncCrazyflie(self._uri, cf=self._cf)
             self._scf.open_link()
+            reset_estimator(self._scf)
+            time.sleep(2)
+            log_conf = LogConfig(name="Position", period_in_ms=200)
+            log_conf.add_variable("stateEstimate.x", "float")
+            log_conf.add_variable("stateEstimate.y", "float")
+            log_conf.add_variable("stateEstimate.z", "float")
+            log_conf.add_variable("stateEstimate.yaw", "float")
+            self._scf.cf.log.add_config(log_conf)
+            log_conf.data_received_cb.add_callback(self.state_callback)
+            log_conf.start()
+            time.sleep(3)
+
             self._is_connected = True
             self.position_hl_commander = PositionHlCommander(
                 self._scf.cf,
@@ -280,7 +297,7 @@ class CrazyFlieService(DroneServiceBase):
             raise RuntimeError("Service not running, cannot turn.")
 
         logger.info(f"Commanding drone to turn {angle} degrees")
-    
+
     def move_body(self, relative_location: Location) -> None:
         if not self._is_connected or not self._scf:
             raise ConnectionError("Crazyflie not connected.")

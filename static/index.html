@@ -874,8 +874,8 @@
 
             // Draw drones
             Object.values(environmentData.drones).forEach(drone => {
-                const x = drone.telemetry.position.x * scaleX;
-                const y = drone.telemetry.position.y * scaleY;
+                const x = drone.telemetry.position.y * scaleY;
+                const y = drone.telemetry.position.x * scaleX;
 
                 // Set drone color based on state to match the legend
                 let droneColor;

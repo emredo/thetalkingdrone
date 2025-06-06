@@ -11,7 +11,7 @@ class Settings:
     debug: bool = False
 
     # Environment settings
-    boundaries: Tuple[float, float, float] = (1.5, 1.5, 1.5)
+    boundaries: Tuple[float, float, float] = (1.35, 1.6, 1.25)
     # Environment obstacles
     buildings: List[BuildingInformation] = [
         BuildingInformation(
