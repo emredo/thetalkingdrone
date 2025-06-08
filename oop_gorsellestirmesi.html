@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje OOP Mimarisi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* gray-900 */
+        }
+        /* Genel kutu stilleri */
+        .box {
+            border-width: 1px;
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+        /* Başlık stilleri */
+        .box-title {
+            font-weight: 700;
+            font-size: 1.125rem; /* text-lg */
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .box-subtitle {
+            font-weight: 500;
+            color: #9CA3AF; /* gray-400 */
+            font-size: 0.875rem; /* text-sm */
+            margin-bottom: 1rem;
+        }
+        /* Farklı bileşenler için renkler */
+        .api-layer { border-color: #34D399; /* emerald-400 */ }
+        .api-layer .box-title { color: #6EE7B7; /* emerald-300 */ }
+
+        .orchestrator { border-color: #60A5FA; /* blue-400 */ }
+        .orchestrator .box-title { color: #93C5FD; /* blue-300 */ }
+        .orchestrator-dict { color: #FBBF24; /* amber-400 */ }
+
+        .service { border-color: #F472B6; /* pink-400 */ }
+        .service .box-title { color: #F9A8D4; /* pink-300 */ }
+
+        .agent { border-color: #A78BFA; /* violet-400 */ }
+        .agent .box-title { color: #C4B5FD; /* violet-300 */ }
+
+        .data-model {
+            background-color: rgba(71, 85, 105, 0.3); /* slate-700/30 */
+            border-color: #64748B; /* slate-500 */
+            padding: 0.5rem;
+        }
+        .data-model .box-title { color: #CBD5E1; font-size: 1rem; }
+
+        /* Soyut sınıf ve miras okları */
+        .abstract-class {
+            border-style: dashed;
+            border-color: #9CA3AF; /* gray-400 */
+            background-color: rgba(55, 65, 81, 0.3); /* gray-700/30 */
+        }
+        .abstract-class .box-title { color: #D1D5DB; /* gray-300 */ }
+
+        .inheritance-arrow {
+            position: absolute;
+            left: 50%;
+            bottom: 100%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 1rem; /* Okun uzunluğu */
+            background-color: #9CA3AF; /* gray-400 */
+        }
+        .inheritance-arrow::after {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: -10px;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 10px solid #9CA3AF;
+        }
+
+        /* Kullanım ilişkisi oku ("Uses") */
+        .uses-arrow {
+            position: absolute;
+            color: #FBBF24; /* amber-400 */
+            font-weight: 600;
+            font-size: 0.875rem;
+            z-index: 10;
+        }
+
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="text-gray-200 p-4 sm:p-6 lg:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-2 text-white">Proje OOP Mimarisi</h1>
+        <p class="text-center text-gray-400 mb-8">Sınıfların ve nesnelerin yapısal ilişkilerini gösteren diyagram.</p>
+
+        <!-- API Katmanı -->
+        <div class="box api-layer">
+            <h2 class="box-title">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+                FastAPI Uygulaması (API Katmanı)
+            </h2>
+            <p class="box-subtitle">Dış dünya ile HTTP üzerinden haberleşir. Gelen istekleri ilgili servislere yönlendirir.</p>
+
+            <!-- Orkestratör: EnvironmentService -->
+            <div class="box orchestrator">
+                 <h3 class="box-title">
+                     <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h12A2.25 2.25 0 0 0 20.25 14.25V3M3.75 21h16.5M16.5 3v11.25A2.25 2.25 0 0 1 14.25 16.5h-4.5A2.25 2.25 0 0 1 7.5 14.25V3" /></svg>
+                     EnvironmentService (Orkestratör)
+                 </h3>
+                 <p class="box-subtitle">Tüm simülasyonu, hava araçlarını ve ajanları yöneten merkezi sınıf (Singleton).</p>
+
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                     <!-- Hava Araçları Sözlüğü -->
+                     <div>
+                         <h4 class="font-semibold text-lg orchestrator-dict mb-2">drones: Dict[str, DroneServiceBase]</h4>
+                         <div class="box service">
+                             <h5 class="box-title">
+                                 <svg class="icon" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" /></svg>
+                                 drone_id: "xyz"
+                             </h5>
+                             <p class="box-subtitle">Her bir hava aracını temsil eden servis nesnesi.</p>
+
+                             <div class="box abstract-class">
+                                 <h6 class="box-title">DroneServiceBase (Soyut Sınıf)</h6>
+                                 <p class="box-subtitle text-sm">Tüm hava aracı tipleri için ortak arayüzü (take_off, land vb.) tanımlar.</p>
+
+                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                     <!-- SimulationDroneService -->
+                                     <div class="bg-gray-800/50 p-4 rounded-lg relative">
+                                         <div class="inheritance-arrow"></div>
+                                         <h6 class="font-bold text-purple-400">SimulationDroneService</h6>
+                                         <p class="text-sm text-gray-300">Sanal hava aracını ve fiziğini yönetir.</p>
+                                     </div>
+                                     <!-- CrazyFlieService -->
+                                     <div class="bg-gray-800/50 p-4 rounded-lg relative">
+                                         <div class="inheritance-arrow"></div>
+                                         <h6 class="font-bold text-rose-400">CrazyFlieService</h6>
+                                         <p class="text-sm text-gray-300">Fiziksel Crazyflie'a komut gönderir.</p>
+                                     </div>
+                                 </div>
+                                 <!-- Ortak İçerik: DroneData -->
+                                 <div class="box data-model mt-4">
+                                    <h6 class="box-title">self.drone: DroneData</h6>
+                                    <div class="text-xs text-gray-400 grid grid-cols-2 gap-2 mt-2">
+                                        <span>model: DroneModel</span>
+                                        <span>fuel_level: float</span>
+                                        <span>telemetry: Telemetry</span>
+                                        <span>drone_id: str</span>
+                                    </div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+
+                     <!-- Otopilot Ajanları Sözlüğü -->
+                     <div>
+                         <h4 class="font-semibold text-lg orchestrator-dict mb-2">autopilot_agents: Dict[str, AutoPilotService]</h4>
+                         <div class="box agent relative" id="agent-box">
+                             <div class="uses-arrow" id="uses-arrow" style="top: 50%; left: -60px; transform: translateY(-50%);">--kullanır</div>
+                             <h5 class="box-title">
+                                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 0 0 2.25-2.25V6.75a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5a2.25 2.25 0 0 0 2.25 2.25Zm.75-12h9v9h-9v-9Z" /></svg>
+                                 AutoPilotService
+                             </h5>
+                             <p class="box-subtitle">Doğal dil komutlarını işleyip ilgili hava aracı servisini kullanan otonom ajan.</p>
+                             <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-800/50 p-3 rounded-lg">
+                                    <h6 class="font-bold text-gray-300">LangGraph Agent</h6>
+                                    <p class="text-sm text-gray-400">ReAct mantığı ile görev planı yapar.</p>
+                                </div>
+                                <div class="bg-gray-800/50 p-3 rounded-lg">
+                                    <h6 class="font-bold text-gray-300">Tools (Araçlar)</h6>
+                                    <p class="text-sm text-gray-400">DroneService metotlarından oluşturulur.</p>
+                                </div>
+                             </div>
+                             <div class="mt-4 text-xs p-2 bg-gray-800/50 rounded-lg">
+                                <p class="font-semibold"><strong>Girdi olarak alır:</strong> <span class="text-pink-400 font-mono">DroneServiceBase</span></p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <!-- SVG for connecting line -->
+    <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none;">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#FBBF24" />
+            </marker>
+        </defs>
+        <line id="connection-line" x1="0" y1="0" x2="0" y2="0" stroke="#FBBF24" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#arrowhead)" />
+    </svg>
+
+    <script>
+        // Bu script, "kullanır" ilişkisini gösteren oku dinamik olarak çizer.
+        function drawConnectionLine() {
+            const fromElement = document.querySelector('.service'); // DroneService kutusu
+            const toElement = document.getElementById('agent-box');   // AutoPilotService kutusu
+            const line = document.getElementById('connection-line');
+            const arrowText = document.getElementById('uses-arrow');
+
+            if (!fromElement || !toElement || !line || !arrowText) return;
+
+            const fromRect = fromElement.getBoundingClientRect();
+            const toRect = toElement.getBoundingClientRect();
+            
+            // Okun başlangıç ve bitiş koordinatları
+            const x1 = fromRect.right + window.scrollX;
+            const y1 = fromRect.top + fromRect.height / 2 + window.scrollY;
+            const x2 = toRect.left + window.scrollX - 10; // -10 for arrowhead
+            const y2 = toRect.top + toRect.height / 2 + window.scrollY;
+
+            // SVG line'ını güncelle
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+
+            // Metin etiketini ortala
+            arrowText.style.left = `${(x1 + x2) / 2}px`;
+            arrowText.style.top = `${(y1 + y2) / 2 - 20}px`; // Biraz yukarıda
+            arrowText.style.position = 'absolute';
+        }
+
+        window.addEventListener('load', drawConnectionLine);
+        window.addEventListener('resize', drawConnectionLine);
+    </script>
+</body>
+</html>
