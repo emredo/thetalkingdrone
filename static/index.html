@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Drone Environment Visualization</title>
+    <title>Drone Ortam Görselleştirmesi</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -246,37 +246,37 @@
 </head>
 
 <body>
-    <h1>Drone Environment Visualization</h1>
+    <h1>Drone Ortam Görselleştirmesi</h1>
 
     <div class="controls">
-        <button onclick="restartSimulation()">Restart Simulation</button>
-        <button onclick="openDroneCreator('simulation')">Create Simulation Drone</button>
-        <button onclick="openDroneCreator('crazyflie')">Create CrazyFlie Drone</button>
-        <span id="simTime">Simulation Time: 0.00s</span>
+        <button onclick="restartSimulation()">Simülasyonu Yeniden Başlat</button>
+        <button onclick="openDroneCreator('simulation')">Simülasyon Drone'u Oluştur</button>
+        <button onclick="openDroneCreator('crazyflie')">CrazyFlie Drone'u Oluştur</button>
+        <span id="simTime">Simülasyon Zamanı: 0.00s</span>
     </div>
 
     <!-- Add drone creation form -->
     <div id="droneCreator" class="drone-creator" style="display: none;">
-        <h3 id="droneCreatorTitle">Create New Drone</h3>
+        <h3 id="droneCreatorTitle">Yeni Drone Oluştur</h3>
         <div class="form-row">
-            <label for="droneName">Name:</label>
-            <input type="text" id="droneName" placeholder="Enter drone name" value="MyDrone">
+            <label for="droneName">İsim:</label>
+            <input type="text" id="droneName" placeholder="Drone ismini girin" value="BenimDronum">
         </div>
         <div class="form-row">
-            <label for="droneX">X Position:</label>
-            <input type="number" id="droneX" placeholder="X coordinate" step="0.1" value="0.5">
+            <label for="droneX">X Pozisyonu:</label>
+            <input type="number" id="droneX" placeholder="X koordinatı" step="0.1" value="0.5">
         </div>
         <div class="form-row">
-            <label for="droneY">Y Position:</label>
-            <input type="number" id="droneY" placeholder="Y coordinate" step="0.1" value="0.5">
+            <label for="droneY">Y Pozisyonu:</label>
+            <input type="number" id="droneY" placeholder="Y koordinatı" step="0.1" value="0.5">
         </div>
         <div class="form-row">
-            <label for="droneZ">Z Position:</label>
-            <input type="number" id="droneZ" placeholder="Z coordinate" step="0.1" value="0.0">
+            <label for="droneZ">Z Pozisyonu:</label>
+            <input type="number" id="droneZ" placeholder="Z koordinatı" step="0.1" value="0.0">
         </div>
         <div class="form-row">
-            <button onclick="createSelectedDrone()">Create</button>
-            <button onclick="closeDroneCreator()">Cancel</button>
+            <button onclick="createSelectedDrone()">Oluştur</button>
+            <button onclick="closeDroneCreator()">İptal</button>
         </div>
     </div>
 
@@ -286,128 +286,127 @@
         </div>
 
         <div id="chatHistory" style="width: 150px; margin: 0;">
-            <h2>LLM Autopilot Chat</h2>
+            <h2>LLM Otopilot Sohbeti</h2>
             <div id="chatMessages" class="chat-messages" style="height: 350px;">
                 <div style="text-align: center; color: #666; font-style: italic;">
-                    Select a drone and send a command to start the conversation
+                    Konuşmayı başlatmak için bir drone seçin ve komut gönderin
                 </div>
             </div>
             <div class="chat-input-section">
                 <div style="margin-bottom: 10px;">
-                    <textarea id="nlCommand"
-                        placeholder="Enter a natural language command (e.g., 'take off to 20 meters')"
+                    <textarea id="nlCommand" placeholder="Doğal dil komutu girin (örn: '20 metreye kalkış yap')"
                         style="width: 93%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; resize: vertical;"
                         rows="2"></textarea>
                 </div>
                 <div>
                     <button id="sendCommandBtn" onclick="sendNLCommand()"
-                        style="width: 100%; background-color: #007bff;">Send Command</button>
+                        style="width: 100%; background-color: #007bff;">Komut Gönder</button>
                 </div>
             </div>
         </div>
 
         <div id="droneDetails" style="width: 150px; margin: 0;">
-            <h2>Drone Details <span id="droneState" class="badge badge-idle">IDLE</span></h2>
+            <h2>Drone Detayları <span id="droneState" class="badge badge-idle">BOŞTA</span></h2>
             <div class="detail-row">
                 <div class="detail-label">ID:</div>
                 <div class="detail-value" id="droneId"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Name:</div>
+                <div class="detail-label">İsim:</div>
                 <div class="detail-value" id="droneNameDisplay"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Type:</div>
+                <div class="detail-label">Tip:</div>
                 <div class="detail-value" id="droneType"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Position:</div>
+                <div class="detail-label">Pozisyon:</div>
                 <div class="detail-value" id="dronePosition"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Heading:</div>
+                <div class="detail-label">Yön:</div>
                 <div class="detail-value" id="droneHeading"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Fuel:</div>
+                <div class="detail-label">Yakıt:</div>
                 <div class="detail-value" id="droneFuel"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Weight:</div>
+                <div class="detail-label">Ağırlık:</div>
                 <div class="detail-value" id="droneWeight"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Max Altitude:</div>
+                <div class="detail-label">Maks Yükseklik:</div>
                 <div class="detail-value" id="droneMaxAltitude"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Dimensions:</div>
+                <div class="detail-label">Boyutlar:</div>
                 <div class="detail-value" id="droneDimensions"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Max Speed:</div>
+                <div class="detail-label">Maks Hız:</div>
                 <div class="detail-value" id="droneMaxSpeed"></div>
             </div>
 
-            <h3>Actions</h3>
+            <h3>Eylemler</h3>
             <div>
-                <button onclick="takeOff()">Take Off</button>
-                <button onclick="land()">Land</button>
-                <button onclick="deleteDrone()" style="background-color: #dc3545; margin-left: 10px;">Delete
-                    Drone</button>
+                <button onclick="takeOff()">Kalkış Yap</button>
+                <button onclick="land()">İniş Yap</button>
+                <button onclick="deleteDrone()" style="background-color: #dc3545; margin-left: 10px;">Drone'u
+                    Sil</button>
             </div>
             <div style="margin-top: 10px;">
                 <input type="number" id="targetX" placeholder="X" style="width: 60px;">
                 <input type="number" id="targetY" placeholder="Y" style="width: 60px;">
                 <input type="number" id="targetZ" placeholder="Z" style="width: 60px;">
                 <div style="margin-top: 5px;">
-                    <button onclick="moveToPositionGlobal()" style="background-color: #4CAF50; margin-right: 5px;">Move
-                        Global</button>
-                    <button onclick="moveToPositionBody()" style="background-color: #2196F3;">Move Body</button>
+                    <button onclick="moveToPositionGlobal()" style="background-color: #4CAF50; margin-right: 5px;">Genel
+                        Hareket</button>
+                    <button onclick="moveToPositionBody()" style="background-color: #2196F3;">Vücut Hareketi</button>
                 </div>
                 <div style="font-size: 11px; color: #666; margin-top: 3px;">
-                    Global: world coordinates, Body: relative to drone orientation
+                    Genel: dünya koordinatları, Vücut: drone yönüne göre
                 </div>
             </div>
             <div style="margin-top: 10px;">
-                <input type="number" id="turnAngle" placeholder="Angle (deg)" style="width: 120px;">
+                <input type="number" id="turnAngle" placeholder="Açı (derece)" style="width: 120px;">
                 <div style="margin-top: 5px;">
-                    <button onclick="turnDroneGlobal()" style="background-color: #ff6b35; margin-right: 5px;">Turn
-                        Global</button>
-                    <button onclick="turnDroneBody()" style="background-color: #f7931e;">Turn Body</button>
+                    <button onclick="turnDroneGlobal()" style="background-color: #ff6b35; margin-right: 5px;">Genel
+                        Dönüş</button>
+                    <button onclick="turnDroneBody()" style="background-color: #f7931e;">Vücut Dönüşü</button>
                 </div>
                 <div style="font-size: 11px; color: #666; margin-top: 3px;">
-                    Global: absolute angle, Body: relative to current heading
+                    Genel: mutlak açı, Vücut: mevcut yöne göre
                 </div>
             </div>
         </div>
     </div>
 
     <div class="legend">
-        <h3>Legend:</h3>
+        <h3>Açıklama:</h3>
         <div class="legend-item">
             <div class="color-box" style="background-color: gray;"></div>
-            <span>Building</span>
+            <span>Bina</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: green;"></div>
-            <span>Drone (IDLE)</span>
+            <span>Drone (BOŞTA)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: blue;"></div>
-            <span>Drone (FLYING)</span>
+            <span>Drone (UÇUYOR)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: purple;"></div>
-            <span>Drone (TAKING_OFF)</span>
+            <span>Drone (KALKIŞ YAPIYOR)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: orange;"></div>
-            <span>Drone (LANDING)</span>
+            <span>Drone (İNİŞ YAPIYOR)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: red;"></div>
-            <span>Drone (EMERGENCY)</span>
+            <span>Drone (ACİL DURUM)</span>
         </div>
     </div>
 
@@ -499,7 +498,7 @@
 
                 // Update simulation time display
                 document.getElementById('simTime').textContent =
-                    `Simulation Time: ${environmentData.environment.time.toFixed(2)}s`;
+                    `Simülasyon Zamanı: ${environmentData.environment.time.toFixed(2)}s`;
 
                 // If a drone is selected, update its details from the new environment data
                 if (selectedDroneId && environmentData.drones && environmentData.drones[selectedDroneId]) {
@@ -552,11 +551,11 @@
 
             // Add appropriate badge class
             switch (droneDetailData.telemetry.state) {
-                case 'IDLE': stateElem.classList.add('badge-idle'); break;
-                case 'FLYING': stateElem.classList.add('badge-flying'); break;
-                case 'TAKING_OFF': stateElem.classList.add('badge-takingoff'); break;
-                case 'LANDING': stateElem.classList.add('badge-landing'); break;
-                case 'EMERGENCY': stateElem.classList.add('badge-emergency'); break;
+                case 'IDLE': stateElem.classList.add('badge-idle'); stateElem.textContent = 'BOŞTA'; break;
+                case 'FLYING': stateElem.classList.add('badge-flying'); stateElem.textContent = 'UÇUYOR'; break;
+                case 'TAKING_OFF': stateElem.classList.add('badge-takingoff'); stateElem.textContent = 'KALKIŞ YAPIYOR'; break;
+                case 'LANDING': stateElem.classList.add('badge-landing'); stateElem.textContent = 'İNİŞ YAPIYOR'; break;
+                case 'EMERGENCY': stateElem.classList.add('badge-emergency'); stateElem.textContent = 'ACİL DURUM'; break;
             }
         }
 
@@ -642,7 +641,7 @@
                 const targetZ = parseFloat(document.getElementById('targetZ').value);
 
                 if (isNaN(targetX) || isNaN(targetY) || isNaN(targetZ)) {
-                    alert('Please enter valid coordinates for X, Y, and Z');
+                    alert('Lütfen X, Y ve Z için geçerli koordinatlar girin');
                     return;
                 }
 
@@ -667,7 +666,7 @@
                 fetchData();
             } catch (error) {
                 console.error('Error moving drone globally:', error);
-                alert(`Error moving drone globally: ${error.message}`);
+                alert(`Drone'u genel olarak hareket ettirirken hata: ${error.message}`);
             }
         }
 
@@ -681,7 +680,7 @@
                 const targetZ = parseFloat(document.getElementById('targetZ').value);
 
                 if (isNaN(targetX) || isNaN(targetY) || isNaN(targetZ)) {
-                    alert('Please enter valid coordinates for X, Y, and Z');
+                    alert('Lütfen X, Y ve Z için geçerli koordinatlar girin');
                     return;
                 }
 
@@ -706,7 +705,7 @@
                 fetchData();
             } catch (error) {
                 console.error('Error moving drone relative to body:', error);
-                alert(`Error moving drone relative to body: ${error.message}`);
+                alert(`Drone'u vücuda göre hareket ettirirken hata: ${error.message}`);
             }
         }
 
@@ -718,7 +717,7 @@
                 const angle = parseFloat(document.getElementById('turnAngle').value);
 
                 if (isNaN(angle)) {
-                    alert('Please enter a valid angle in degrees');
+                    alert('Lütfen derece cinsinden geçerli bir açı girin');
                     return;
                 }
 
@@ -741,7 +740,7 @@
                 fetchData();
             } catch (error) {
                 console.error('Error turning drone globally:', error);
-                alert(`Error turning drone globally: ${error.message}`);
+                alert(`Drone'u genel olarak çevirirken hata: ${error.message}`);
             }
         }
 
@@ -753,7 +752,7 @@
                 const angle = parseFloat(document.getElementById('turnAngle').value);
 
                 if (isNaN(angle)) {
-                    alert('Please enter a valid angle in degrees');
+                    alert('Lütfen derece cinsinden geçerli bir açı girin');
                     return;
                 }
 
@@ -776,7 +775,7 @@
                 fetchData();
             } catch (error) {
                 console.error('Error turning drone relative to body:', error);
-                alert(`Error turning drone relative to body: ${error.message}`);
+                alert(`Drone'u vücuda göre çevirirken hata: ${error.message}`);
             }
         }
 
@@ -786,7 +785,7 @@
 
             // Confirm deletion
             const droneName = droneDetailData.model.name;
-            if (!confirm(`Are you sure you want to delete drone "${droneName}" (ID: ${selectedDroneId})? This action cannot be undone.`)) {
+            if (!confirm(`"${droneName}" drone'unu (ID: ${selectedDroneId}) silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                 return;
             }
 
@@ -806,10 +805,10 @@
                 // Refresh the data to update the display
                 fetchData();
 
-                alert(`Drone "${droneName}" has been successfully deleted.`);
+                alert(`"${droneName}" drone'u başarıyla silindi.`);
             } catch (error) {
                 console.error('Error deleting drone:', error);
-                alert(`Error deleting drone: ${error.message}`);
+                alert(`Drone silinirken hata: ${error.message}`);
             }
         }
 
@@ -1001,13 +1000,13 @@
         // Add these functions to handle the LLM Autopilot
         function sendNLCommand() {
             if (!selectedDroneId) {
-                alert("Please select a drone first");
+                alert("Lütfen önce bir drone seçin");
                 return;
             }
 
             const command = document.getElementById('nlCommand').value.trim();
             if (!command) {
-                alert("Please enter a command");
+                alert("Lütfen bir komut girin");
                 return;
             }
 
@@ -1046,13 +1045,13 @@
         // Display loading message in chat
         function displayLoadingMessage() {
             const chatMessages = document.getElementById('chatMessages');
-            chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">Processing command...</div>';
+            chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">Komut işleniyor...</div>';
         }
 
         // Display error message in chat
         function displayErrorMessage(errorMsg) {
             const chatMessages = document.getElementById('chatMessages');
-            chatMessages.innerHTML = `<div style="color: red; text-align: center;">Error: ${errorMsg}</div>`;
+            chatMessages.innerHTML = `<div style="color: red; text-align: center;">Hata: ${errorMsg}</div>`;
         }
 
         // Fetch and display chat history
@@ -1078,7 +1077,7 @@
             const chatMessages = document.getElementById('chatMessages');
 
             if (!chatHistory || chatHistory.length === 0) {
-                chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">No conversation history yet</div>';
+                chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">Henüz konuşma geçmişi yok</div>';
                 return;
             }
 
@@ -1143,9 +1142,9 @@
 
             // Update the title based on drone type
             if (droneType === 'simulation') {
-                titleElement.textContent = 'Create Simulation Drone';
+                titleElement.textContent = 'Simülasyon Drone\'u Oluştur';
             } else {
-                titleElement.textContent = 'Create CrazyFlie Drone';
+                titleElement.textContent = 'CrazyFlie Drone\'u Oluştur';
             }
 
             creatorDiv.style.display = 'block';
@@ -1160,7 +1159,7 @@
         // Create drone using the selected drone type
         function createSelectedDrone() {
             if (!selectedDroneType) {
-                alert('No drone type selected');
+                alert('Drone tipi seçilmedi');
                 return;
             }
             createDrone(selectedDroneType);
@@ -1175,12 +1174,12 @@
                 const z = parseFloat(document.getElementById('droneZ').value);
 
                 if (!name) {
-                    alert('Please enter a drone name');
+                    alert('Lütfen drone ismi girin');
                     return;
                 }
 
                 if (isNaN(x) || isNaN(y) || isNaN(z)) {
-                    alert('Please enter valid coordinates');
+                    alert('Lütfen geçerli koordinatlar girin');
                     return;
                 }
 
@@ -1221,7 +1220,7 @@
                 fetchData();
             } catch (error) {
                 console.error(`Error creating ${droneType} drone:`, error);
-                alert(`Error creating drone: ${error.message}`);
+                alert(`Drone oluştururken hata: ${error.message}`);
             }
         }
     </script>
