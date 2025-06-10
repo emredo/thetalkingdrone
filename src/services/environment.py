@@ -3,11 +3,15 @@ import time
 from typing import Dict
 
 from src.models import (
-    ObstacleCollisionException,
     OutOfBoundsException,
 )
-from src.models.physical_models import EnvironmentFeatures, Location, Obstacle
-from src.services.drone import DroneService
+from src.models.physical_models import (
+    BuildingInformation,
+    EnvironmentFeatures,
+    Telemetry,
+)
+from src.services.drone_base import DroneServiceBase
+from src.services.autopilot_service import AutoPilotService
 from src.utils.logger import logger
 
 
@@ -21,9 +25,10 @@ class EnvironmentService:
 
         self.features = EnvironmentFeatures(
             boundaries=Settings.boundaries,
-            obstacles=Settings.environment_obstacles,
+            buildings=Settings.buildings,
         )
-        self.drones: Dict[str, DroneService] = {}
+        self.autopilot_agents: Dict[str, AutoPilotService] = {}
+        self.drones: Dict[str, DroneServiceBase] = {}
         self.time = 0.0
         self._last_update_time = time.time()
 
@@ -35,49 +40,23 @@ class EnvironmentService:
         # Start the simulation thread
         self.start_simulation()
 
-    def add_obstacle(self, obstacle: Obstacle) -> None:
+    def add_obstacle(self, obstacle: BuildingInformation) -> None:
         """Add an obstacle to the environment."""
-        self.features.obstacles.append(obstacle)
+        self.features.buildings.append(obstacle)
 
-    def check_collision(self, location: Location) -> bool:
-        """Check if location collides with any obstacle."""
-        for obstacle in self.features.obstacles:
-            obs_loc = obstacle.location
-            dimensions = obstacle.dimensions
-
-            # Simple collision check using axis-aligned bounding boxes
-            if (
-                obs_loc.x - dimensions[0] / 2
-                <= location.x
-                <= obs_loc.x + dimensions[0] / 2
-                and obs_loc.y - dimensions[1] / 2
-                <= location.y
-                <= obs_loc.y + dimensions[1] / 2
-                and obs_loc.z <= location.z <= obs_loc.z + dimensions[2]
-            ):
-                return True
-
-        return False
-
-    def validate_location(self, location: Location) -> None:
+    def validate_location(self, telemetry: Telemetry) -> None:
         """Validate if a location is within bounds and not colliding with obstacles."""
         # Check if location is within environment boundaries
         if (
-            location.x < 0
-            or location.x > self.features.boundaries[0]
-            or location.y < 0
-            or location.y > self.features.boundaries[1]
-            or location.z < 0
-            or location.z > self.features.boundaries[2]
+            telemetry.position.x < 0
+            or telemetry.position.x > self.features.boundaries[0]
+            or telemetry.position.y < 0
+            or telemetry.position.y > self.features.boundaries[1]
+            or telemetry.position.z < 0
+            or telemetry.position.z > self.features.boundaries[2]
         ):
             raise OutOfBoundsException(
-                f"Location {location} is outside environment boundaries"
-            )
-
-        # Check for collisions with obstacles
-        if self.check_collision(location):
-            raise ObstacleCollisionException(
-                f"Location {location} collides with an obstacle"
+                f"Location {telemetry.position} is outside environment boundaries"
             )
 
     def update_time(self, time_delta: float) -> None:
@@ -114,6 +93,14 @@ class EnvironmentService:
         self._stop_event.set()
         if self._time_thread:
             self._time_thread.join(timeout=2.0)
+
+        for drone_id, drone_service in self.drones.items():
+            drone_service.stop_service()
+            logger.info(f"Drone {drone_id} stopped")
+        time.sleep(5)
+        self.drones.clear()
+        self.autopilot_agents.clear()
+
         self._is_running = False
         logger.info("Environment simulation thread stopped")
 
@@ -142,7 +129,7 @@ class EnvironmentService:
         from src.config.settings import Settings
 
         self.features = EnvironmentFeatures(
-            boundaries=Settings.boundaries, obstacles=Settings.environment_obstacles
+            boundaries=Settings.boundaries, buildings=Settings.buildings
         )
 
         # Restart the simulation thread

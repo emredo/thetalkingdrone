@@ -6,32 +6,28 @@ from .exceptions import (
     InsufficientFuelException,
     InvalidCommandException,
     InvalidDroneCommandException,
-    ObstacleCollisionException,
     OutOfBoundsException,
 )
 from .physical_models import (
+    BuildingInformation,
     DroneModel,
     DroneState,
     EnvironmentFeatures,
     Location,
-    Obstacle,
 )
-from .response import DroneDetails
 
 __all__ = [
     "DroneModel",
     "DroneState",
     "Location",
-    "Obstacle",
+    "BuildingInformation",
     "EnvironmentFeatures",
     "DroneException",
     "DroneNotOperationalException",
     "InsufficientFuelException",
     "InvalidDroneCommandException",
     "InvalidCommandException",
-    "DroneDetails",
     "AgentNotInitializedException",
     "AutopilotException",
-    "ObstacleCollisionException",
     "OutOfBoundsException",
 ]

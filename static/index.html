@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Drone Environment Visualization</title>
+    <title>Drone Ortam Görselleştirmesi</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -80,6 +80,16 @@
             flex: 1;
         }
 
+        #chatHistory {
+            flex: 0 0 350px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
         #droneDetails {
             flex: 0 0 300px;
             background-color: white;
@@ -138,128 +148,265 @@
         .badge-emergency {
             background-color: red;
         }
+
+        .drone-creator {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .drone-creator h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .form-row label {
+            flex: 0 0 100px;
+            font-weight: bold;
+        }
+
+        .form-row input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .form-row button {
+            margin-right: 10px;
+        }
+
+        /* Chat History Styles */
+        .chat-messages {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+        }
+
+        .chat-message {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 90%;
+        }
+
+        .chat-message.user {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            margin-left: 10px;
+        }
+
+        .chat-message.agent {
+            background-color: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            margin-right: 10px;
+        }
+
+        .chat-message.tool {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            margin-left: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .message-type {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .message-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .chat-input-section {
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
     </style>
 </head>
 
 <body>
-    <h1>Drone Environment Visualization</h1>
+    <h1>Drone Ortam Görselleştirmesi</h1>
 
     <div class="controls">
-        <button onclick="fetchData()">Refresh</button>
-        <button onclick="restartSimulation()">Restart Simulation</button>
-        <button onclick="createDefaultDrone()">Add Default Drone</button>
-        <span id="simTime">Simulation Time: 0.00s</span>
+        <button onclick="restartSimulation()">Simülasyonu Yeniden Başlat</button>
+        <button onclick="openDroneCreator('simulation')">Simülasyon Drone'u Oluştur</button>
+        <button onclick="openDroneCreator('crazyflie')">CrazyFlie Drone'u Oluştur</button>
+        <span id="simTime">Simülasyon Zamanı: 0.00s</span>
     </div>
 
-    <div class="layout">
+    <!-- Add drone creation form -->
+    <div id="droneCreator" class="drone-creator" style="display: none;">
+        <h3 id="droneCreatorTitle">Yeni Drone Oluştur</h3>
+        <div class="form-row">
+            <label for="droneName">İsim:</label>
+            <input type="text" id="droneName" placeholder="Drone ismini girin" value="BenimDronum">
+        </div>
+        <div class="form-row">
+            <label for="droneX">X Pozisyonu:</label>
+            <input type="number" id="droneX" placeholder="X koordinatı" step="0.1" value="0.5">
+        </div>
+        <div class="form-row">
+            <label for="droneY">Y Pozisyonu:</label>
+            <input type="number" id="droneY" placeholder="Y koordinatı" step="0.1" value="0.5">
+        </div>
+        <div class="form-row">
+            <label for="droneZ">Z Pozisyonu:</label>
+            <input type="number" id="droneZ" placeholder="Z koordinatı" step="0.1" value="0.0">
+        </div>
+        <div class="form-row">
+            <button onclick="createSelectedDrone()">Oluştur</button>
+            <button onclick="closeDroneCreator()">İptal</button>
+        </div>
+    </div>
+
+    <div class="layout" style="gap: 5px;">
         <div class="canvas-container">
-            <canvas id="canvas" width="800" height="600"></canvas>
+            <canvas id="canvas" width="650" height="650"></canvas>
         </div>
 
-        <div id="droneDetails">
-            <h2>Drone Details <span id="droneState" class="badge badge-idle">IDLE</span></h2>
+        <div id="chatHistory" style="width: 150px; margin: 0;">
+            <h2>LLM Otopilot Sohbeti</h2>
+            <div id="chatMessages" class="chat-messages" style="height: 350px;">
+                <div style="text-align: center; color: #666; font-style: italic;">
+                    Konuşmayı başlatmak için bir drone seçin ve komut gönderin
+                </div>
+            </div>
+            <div class="chat-input-section">
+                <div style="margin-bottom: 10px;">
+                    <textarea id="nlCommand" placeholder="Doğal dil komutu girin (örn: '20 metreye kalkış yap')"
+                        style="width: 93%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; resize: vertical;"
+                        rows="2"></textarea>
+                </div>
+                <div>
+                    <button id="sendCommandBtn" onclick="sendNLCommand()"
+                        style="width: 100%; background-color: #007bff;">Komut Gönder</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="droneDetails" style="width: 150px; margin: 0;">
+            <h2>Drone Detayları <span id="droneState" class="badge badge-idle">BOŞTA</span></h2>
             <div class="detail-row">
                 <div class="detail-label">ID:</div>
                 <div class="detail-value" id="droneId"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Name:</div>
-                <div class="detail-value" id="droneName"></div>
+                <div class="detail-label">İsim:</div>
+                <div class="detail-value" id="droneNameDisplay"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Position:</div>
+                <div class="detail-label">Tip:</div>
+                <div class="detail-value" id="droneType"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Pozisyon:</div>
                 <div class="detail-value" id="dronePosition"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Speed:</div>
-                <div class="detail-value" id="droneSpeed"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Heading:</div>
+                <div class="detail-label">Yön:</div>
                 <div class="detail-value" id="droneHeading"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Fuel:</div>
+                <div class="detail-label">Yakıt:</div>
                 <div class="detail-value" id="droneFuel"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Weight:</div>
+                <div class="detail-label">Ağırlık:</div>
                 <div class="detail-value" id="droneWeight"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Max Altitude:</div>
+                <div class="detail-label">Maks Yükseklik:</div>
                 <div class="detail-value" id="droneMaxAltitude"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Dimensions:</div>
+                <div class="detail-label">Boyutlar:</div>
                 <div class="detail-value" id="droneDimensions"></div>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Max Speed:</div>
+                <div class="detail-label">Maks Hız:</div>
                 <div class="detail-value" id="droneMaxSpeed"></div>
             </div>
 
-            <!-- Add natural language command section -->
-            <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
-                <h3>LLM Autopilot</h3>
-                <div class="detail-row" style="margin-bottom: 15px;">
-                    <button id="initAutopilotBtn" onclick="initializeAutopilot()" style="width: 100%;">Initialize
-                        Autopilot</button>
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <textarea id="nlCommand"
-                        placeholder="Enter a natural language command (e.g., 'take off to 20 meters')"
-                        style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; resize: vertical;"
-                        rows="3"></textarea>
-                </div>
-                <div>
-                    <button id="sendCommandBtn" onclick="sendNLCommand()"
-                        style="width: 100%; background-color: #007bff;" disabled>Send Command</button>
-                </div>
-                <div id="commandResult"
-                    style="margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; display: none;">
-                </div>
-            </div>
-
-            <h3>Actions</h3>
+            <h3>Eylemler</h3>
             <div>
-                <button onclick="takeOff()">Take Off</button>
-                <button onclick="land()">Land</button>
+                <button onclick="takeOff()">Kalkış Yap</button>
+                <button onclick="land()">İniş Yap</button>
+                <button onclick="deleteDrone()" style="background-color: #dc3545; margin-left: 10px;">Drone'u
+                    Sil</button>
             </div>
             <div style="margin-top: 10px;">
                 <input type="number" id="targetX" placeholder="X" style="width: 60px;">
                 <input type="number" id="targetY" placeholder="Y" style="width: 60px;">
                 <input type="number" id="targetZ" placeholder="Z" style="width: 60px;">
-                <button onclick="moveToPosition()">Move To</button>
+                <div style="margin-top: 5px;">
+                    <button onclick="moveToPositionGlobal()" style="background-color: #4CAF50; margin-right: 5px;">Genel
+                        Hareket</button>
+                    <button onclick="moveToPositionBody()" style="background-color: #2196F3;">Vücut Hareketi</button>
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 3px;">
+                    Genel: dünya koordinatları, Vücut: drone yönüne göre
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <input type="number" id="turnAngle" placeholder="Açı (derece)" style="width: 120px;">
+                <div style="margin-top: 5px;">
+                    <button onclick="turnDroneGlobal()" style="background-color: #ff6b35; margin-right: 5px;">Genel
+                        Dönüş</button>
+                    <button onclick="turnDroneBody()" style="background-color: #f7931e;">Vücut Dönüşü</button>
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 3px;">
+                    Genel: mutlak açı, Vücut: mevcut yöne göre
+                </div>
             </div>
         </div>
     </div>
 
     <div class="legend">
-        <h3>Legend:</h3>
+        <h3>Açıklama:</h3>
         <div class="legend-item">
             <div class="color-box" style="background-color: gray;"></div>
-            <span>Obstacle</span>
+            <span>Bina</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: green;"></div>
-            <span>Drone (IDLE)</span>
+            <span>Drone (BOŞTA)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: blue;"></div>
-            <span>Drone (FLYING)</span>
+            <span>Drone (UÇUYOR)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: purple;"></div>
-            <span>Drone (TAKING_OFF)</span>
+            <span>Drone (KALKIŞ YAPIYOR)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: orange;"></div>
-            <span>Drone (LANDING)</span>
+            <span>Drone (İNİŞ YAPIYOR)</span>
         </div>
         <div class="legend-item">
             <div class="color-box" style="background-color: red;"></div>
-            <span>Drone (EMERGENCY)</span>
+            <span>Drone (ACİL DURUM)</span>
         </div>
     </div>
 
@@ -270,61 +417,102 @@
         let environmentData = null;
         let selectedDroneId = null;
         let droneDetailData = null;
+        let selectedDroneType = null; // Track which drone type to create
 
         // Scale factors
         let scaleX, scaleY;
 
-        // Configure API URLs
-        const CREATE_DRONE_URL = '/create-default-drone';
+        // Drone SVG icon setup
+        let droneIcon = null;
+        const iconSize = 32; // Size in pixels
+
+        // Load drone SVG icon
+        function loadDroneIcon() {
+            droneIcon = new Image();
+            droneIcon.onload = function () {
+                console.log('Drone icon loaded successfully');
+            };
+            droneIcon.onerror = function () {
+                console.error('Failed to load drone icon');
+            };
+
+            // Create SVG data URL with the drone icon
+            const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M19.74 30.7L6.5 42.43L24 5.57m4.26 25.13L41.5 42.43L24 5.57" stroke-width="2"/><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M19.74 30.7h8.52L24 5.57Z" stroke-width="2"/></svg>`;
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(svgBlob);
+            droneIcon.src = url;
+        }
+
+        // Function to draw rotated drone icon
+        function drawDroneIcon(x, y, heading, color, isSelected = false) {
+            if (!droneIcon) return;
+
+            ctx.save();
+
+            // Draw selection highlight
+            if (isSelected) {
+                ctx.beginPath();
+                ctx.arc(x, y, iconSize / 2 + 4, 0, Math.PI * 2);
+                ctx.strokeStyle = 'gold';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // Move to drone position
+            ctx.translate(x, y);
+
+            // Rotate based on heading (convert degrees to radians)
+            // Note: SVG icon points upward by default, so we rotate from that orientation
+            const rotationRadians = (heading + 180) * Math.PI / 180; // +90 to align with "north" being up
+            ctx.rotate(rotationRadians);
+
+            // Apply color tint by using composite operations
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Draw the icon centered
+            const halfSize = iconSize / 2;
+            ctx.drawImage(droneIcon, -halfSize, -halfSize, iconSize, iconSize);
+
+            // Apply color overlay
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = color;
+            ctx.fillRect(-halfSize, -halfSize, iconSize, iconSize);
+
+            ctx.restore();
+        }
 
         // Fetch environment data
         async function fetchData() {
             try {
-                const response = await fetch("/environment/state");
+                const response = await fetch("/environment/state/");
                 if (!response.ok) throw new Error('Failed to fetch environment data');
 
                 environmentData = await response.json();
 
                 // Set scale factors based on environment boundaries
-                const bounds = environmentData.environment.boundaries;
-                scaleX = canvas.width / bounds[0];
-                scaleY = canvas.height / bounds[1];
+                const bounds = environmentData.environment.features.boundaries;
+                scaleX = canvas.height / bounds[0];
+                scaleY = canvas.width / bounds[1];
 
                 renderEnvironment();
 
                 // Update simulation time display
                 document.getElementById('simTime').textContent =
-                    `Simulation Time: ${environmentData.environment.time.toFixed(2)}s`;
+                    `Simülasyon Zamanı: ${environmentData.environment.time.toFixed(2)}s`;
 
-                // If a drone is selected, update its details
-                if (selectedDroneId) {
-                    const selectedDrone = environmentData.drones.find(d => d.id === selectedDroneId);
-                    if (selectedDrone) {
-                        fetchDroneDetails(selectedDroneId);
-                    } else {
-                        // Selected drone no longer exists
-                        clearSelectedDrone();
-                    }
+                // If a drone is selected, update its details from the new environment data
+                if (selectedDroneId && environmentData.drones && environmentData.drones[selectedDroneId]) {
+                    droneDetailData = environmentData.drones[selectedDroneId];
+                    updateDroneDetailsPanel();
+                    // Ensure panels remain visible after data refresh
+                    document.getElementById('droneDetails').style.display = 'block';
+                    document.getElementById('chatHistory').style.display = 'block';
+                } else if (selectedDroneId) {
+                    // Selected drone no longer exists
+                    clearSelectedDrone();
                 }
             } catch (error) {
                 console.error('Error fetching environment data:', error);
-            }
-        }
-
-        // Fetch detailed drone information
-        async function fetchDroneDetails(droneId) {
-            try {
-                const response = await fetch(`/drone/${droneId}/details`);
-                if (!response.ok) throw new Error('Failed to fetch drone details');
-
-                droneDetailData = await response.json();
-                updateDroneDetailsPanel();
-
-                // Show the details panel
-                document.getElementById('droneDetails').style.display = 'block';
-            } catch (error) {
-                console.error('Error fetching drone details:', error);
-                clearSelectedDrone();
             }
         }
 
@@ -332,39 +520,42 @@
         function updateDroneDetailsPanel() {
             if (!droneDetailData) return;
 
-            document.getElementById('droneId').textContent = droneDetailData.id;
-            document.getElementById('droneName').textContent = droneDetailData.name;
+            document.getElementById('droneId').textContent = droneDetailData.drone_id;
+            document.getElementById('droneNameDisplay').textContent = droneDetailData.model.name;
+            document.getElementById('droneType').textContent = droneDetailData.model.type;
             document.getElementById('dronePosition').textContent =
-                `(${droneDetailData.location.x.toFixed(1)}, ${droneDetailData.location.y.toFixed(1)}, ${droneDetailData.location.z.toFixed(1)})`;
-            document.getElementById('droneSpeed').textContent =
-                `${droneDetailData.speed.toFixed(1)} m/s (max: ${droneDetailData.max_speed.toFixed(1)} m/s)`;
+                `(${droneDetailData.telemetry.position.x.toFixed(1)}, ${droneDetailData.telemetry.position.y.toFixed(1)}, ${droneDetailData.telemetry.position.z.toFixed(1)})`;
             document.getElementById('droneHeading').textContent =
-                `${droneDetailData.heading.toFixed(1)}°`;
+                `${droneDetailData.telemetry.heading.toFixed(1)}°`;
+
+            // Calculate fuel percentage
+            const fuelPercentage = (droneDetailData.fuel_level / droneDetailData.model.fuel_capacity * 100);
             document.getElementById('droneFuel').textContent =
-                `${droneDetailData.fuel_level.toFixed(1)} / ${droneDetailData.fuel_capacity.toFixed(1)} (${droneDetailData.fuel_percentage.toFixed(1)}%)`;
+                `${droneDetailData.fuel_level.toFixed(1)} / ${droneDetailData.model.fuel_capacity.toFixed(1)} (${fuelPercentage.toFixed(1)}%)`;
+
             document.getElementById('droneWeight').textContent =
-                `${droneDetailData.weight.toFixed(1)} kg`;
+                `${droneDetailData.model.weight.toFixed(1)} kg`;
             document.getElementById('droneMaxAltitude').textContent =
-                `${droneDetailData.max_altitude.toFixed(1)} m`;
+                `${droneDetailData.model.max_altitude.toFixed(1)} m`;
             document.getElementById('droneDimensions').textContent =
-                `${droneDetailData.dimensions[0]} × ${droneDetailData.dimensions[1]} × ${droneDetailData.dimensions[2]} m`;
+                `${droneDetailData.model.dimensions[0]} × ${droneDetailData.model.dimensions[1]} × ${droneDetailData.model.dimensions[2]} m`;
             document.getElementById('droneMaxSpeed').textContent =
-                `${droneDetailData.max_speed.toFixed(1)} m/s`;
+                `${droneDetailData.model.max_speed.toFixed(1)} m/s`;
 
             // Update state badge
             const stateElem = document.getElementById('droneState');
-            stateElem.textContent = droneDetailData.state.toUpperCase();
+            stateElem.textContent = droneDetailData.telemetry.state.toUpperCase();
 
             // Remove all badge classes
             stateElem.classList.remove('badge-idle', 'badge-flying', 'badge-takingoff', 'badge-landing', 'badge-emergency');
 
             // Add appropriate badge class
-            switch (droneDetailData.state) {
-                case 'IDLE': stateElem.classList.add('badge-idle'); break;
-                case 'FLYING': stateElem.classList.add('badge-flying'); break;
-                case 'TAKING_OFF': stateElem.classList.add('badge-takingoff'); break;
-                case 'LANDING': stateElem.classList.add('badge-landing'); break;
-                case 'EMERGENCY': stateElem.classList.add('badge-emergency'); break;
+            switch (droneDetailData.telemetry.state) {
+                case 'IDLE': stateElem.classList.add('badge-idle'); stateElem.textContent = 'BOŞTA'; break;
+                case 'FLYING': stateElem.classList.add('badge-flying'); stateElem.textContent = 'UÇUYOR'; break;
+                case 'TAKING_OFF': stateElem.classList.add('badge-takingoff'); stateElem.textContent = 'KALKIŞ YAPIYOR'; break;
+                case 'LANDING': stateElem.classList.add('badge-landing'); stateElem.textContent = 'İNİŞ YAPIYOR'; break;
+                case 'EMERGENCY': stateElem.classList.add('badge-emergency'); stateElem.textContent = 'ACİL DURUM'; break;
             }
         }
 
@@ -373,12 +564,13 @@
             selectedDroneId = null;
             droneDetailData = null;
             document.getElementById('droneDetails').style.display = 'none';
+            document.getElementById('chatHistory').style.display = 'none';
         }
 
         // Restart the simulation
         async function restartSimulation() {
             try {
-                const response = await fetch("/environment/restart-simulation", {
+                const response = await fetch("/environment/restart-simulation/", {
                     method: 'POST'
                 });
 
@@ -397,35 +589,12 @@
             }
         }
 
-        // Create a default drone
-        async function createDefaultDrone() {
-            try {
-                const response = await fetch("/environment/create-default-drone", {
-                    method: 'POST'
-                });
-
-                if (!response.ok) throw new Error('Failed to create drone');
-
-                const droneId = await response.json();
-                console.log(`Created drone with ID: ${droneId}`);
-
-                // Select the newly created drone
-                selectedDroneId = droneId;
-                fetchDroneDetails(droneId);
-
-                // Refresh the data
-                fetchData();
-            } catch (error) {
-                console.error('Error creating drone:', error);
-            }
-        }
-
         // Take off command
         async function takeOff() {
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`/drone/${selectedDroneId}/takeoff`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/takeoff/`, {
                     method: 'POST'
                 });
 
@@ -446,7 +615,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`/drone/${selectedDroneId}/land`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/land/`, {
                     method: 'POST'
                 });
 
@@ -462,8 +631,8 @@
             }
         }
 
-        // Move to position
-        async function moveToPosition() {
+        // Move to position globally (world coordinates)
+        async function moveToPositionGlobal() {
             if (!selectedDroneId || !droneDetailData) return;
 
             try {
@@ -472,11 +641,11 @@
                 const targetZ = parseFloat(document.getElementById('targetZ').value);
 
                 if (isNaN(targetX) || isNaN(targetY) || isNaN(targetZ)) {
-                    alert('Please enter valid coordinates for X, Y, and Z');
+                    alert('Lütfen X, Y ve Z için geçerli koordinatlar girin');
                     return;
                 }
 
-                const response = await fetch(`/drone/${selectedDroneId}/move`, {
+                const response = await fetch(`/autopilot/${selectedDroneId}/move_global/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -488,7 +657,7 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('Failed to move');
+                if (!response.ok) throw new Error('Failed to move globally');
 
                 const result = await response.json();
                 console.log(result.message);
@@ -496,7 +665,150 @@
                 // Refresh the data
                 fetchData();
             } catch (error) {
-                console.error('Error moving drone:', error);
+                console.error('Error moving drone globally:', error);
+                alert(`Drone'u genel olarak hareket ettirirken hata: ${error.message}`);
+            }
+        }
+
+        // Move to position relative to body (drone's local coordinates)
+        async function moveToPositionBody() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            try {
+                const targetX = parseFloat(document.getElementById('targetX').value);
+                const targetY = parseFloat(document.getElementById('targetY').value);
+                const targetZ = parseFloat(document.getElementById('targetZ').value);
+
+                if (isNaN(targetX) || isNaN(targetY) || isNaN(targetZ)) {
+                    alert('Lütfen X, Y ve Z için geçerli koordinatlar girin');
+                    return;
+                }
+
+                const response = await fetch(`/autopilot/${selectedDroneId}/move_body/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        x: targetX,
+                        y: targetY,
+                        z: targetZ
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to move relative to body');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error moving drone relative to body:', error);
+                alert(`Drone'u vücuda göre hareket ettirirken hata: ${error.message}`);
+            }
+        }
+
+        // Turn drone globally (absolute angle)
+        async function turnDroneGlobal() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            try {
+                const angle = parseFloat(document.getElementById('turnAngle').value);
+
+                if (isNaN(angle)) {
+                    alert('Lütfen derece cinsinden geçerli bir açı girin');
+                    return;
+                }
+
+                const response = await fetch(`/autopilot/${selectedDroneId}/turn_global/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        angle: angle
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to turn globally');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error turning drone globally:', error);
+                alert(`Drone'u genel olarak çevirirken hata: ${error.message}`);
+            }
+        }
+
+        // Turn drone relative to body (relative angle)
+        async function turnDroneBody() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            try {
+                const angle = parseFloat(document.getElementById('turnAngle').value);
+
+                if (isNaN(angle)) {
+                    alert('Lütfen derece cinsinden geçerli bir açı girin');
+                    return;
+                }
+
+                const response = await fetch(`/autopilot/${selectedDroneId}/turn_body/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        angle: angle
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to turn relative to body');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Refresh the data
+                fetchData();
+            } catch (error) {
+                console.error('Error turning drone relative to body:', error);
+                alert(`Drone'u vücuda göre çevirirken hata: ${error.message}`);
+            }
+        }
+
+        // Delete drone
+        async function deleteDrone() {
+            if (!selectedDroneId || !droneDetailData) return;
+
+            // Confirm deletion
+            const droneName = droneDetailData.model.name;
+            if (!confirm(`"${droneName}" drone'unu (ID: ${selectedDroneId}) silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/environment/${selectedDroneId}/remove-drone/`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete drone');
+
+                const result = await response.json();
+                console.log(result.message);
+
+                // Clear the selected drone since it no longer exists
+                clearSelectedDrone();
+
+                // Refresh the data to update the display
+                fetchData();
+
+                alert(`"${droneName}" drone'u başarıyla silindi.`);
+            } catch (error) {
+                console.error('Error deleting drone:', error);
+                alert(`Drone silinirken hata: ${error.message}`);
             }
         }
 
@@ -512,23 +824,52 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
-            // Draw boundary coordinates
-            const bounds = environmentData.environment.boundaries;
+            // Draw boundary coordinates and axis labels
+            const bounds = environmentData.environment.features.boundaries;
             ctx.fillStyle = '#666';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
 
-            // Top-left corner
+            // Corner coordinates (X is vertical, Y is horizontal)
+            // Top-left corner (origin)
             ctx.fillText('(0, 0)', 30, 20);
 
-            // Top-right corner
-            ctx.fillText(`(${bounds[0]}, 0)`, canvas.width - 30, 20);
+            // Top-right corner (X=0, Y=max)
+            ctx.fillText(`(0, ${bounds[1]})`, canvas.width - 30, 20);
 
-            // Bottom-left corner
-            ctx.fillText(`(0, ${bounds[1]})`, 30, canvas.height - 10);
+            // Bottom-left corner (X=max, Y=0)
+            ctx.fillText(`(${bounds[0]}, 0)`, 30, canvas.height - 10);
 
-            // Bottom-right corner
+            // Bottom-right corner (X=max, Y=max)
             ctx.fillText(`(${bounds[0]}, ${bounds[1]})`, canvas.width - 30, canvas.height - 10);
+
+            // Add axis labels for clarity
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+
+            // X-axis label (vertical axis) - positioned outside left edge
+            ctx.save();
+            ctx.translate(-10, canvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillText('X-axis (vertical)', 0, 0);
+            ctx.restore();
+
+            // Y-axis label (horizontal axis) - positioned outside bottom edge
+            ctx.textAlign = 'center';
+            ctx.fillText('Y-axis (horizontal)', canvas.width / 2, canvas.height + 25);
+
+            // Add directional arrows and labels
+            ctx.fillStyle = '#666';
+            ctx.font = 'bold 18px Arial';
+
+            // X-axis direction (downward)
+            ctx.textAlign = 'left';
+            ctx.fillText('X+ ↓', 5, canvas.height / 2 + 15);
+
+            // Y-axis direction (rightward)
+            ctx.textAlign = 'center';
+            ctx.fillText('Y+ →', canvas.width / 2 + 30, 35);
 
             // Draw grid (every 10 units)
             ctx.strokeStyle = '#eee';
@@ -536,6 +877,7 @@
 
             for (let x = 0; x <= bounds[0]; x += 0.1) {
                 ctx.beginPath();
+                ctx.moveTo(x * scaleX, 0);
                 ctx.moveTo(x * scaleX, 0);
                 ctx.lineTo(x * scaleX, canvas.height);
                 ctx.stroke();
@@ -548,73 +890,65 @@
                 ctx.stroke();
             }
 
-            // Draw obstacles
-            environmentData.environment.obstacles.forEach(obstacle => {
+            // Draw buildings
+            environmentData.environment.features.buildings.forEach(building => {
                 ctx.fillStyle = 'gray';
-                const x = obstacle.position.x * scaleX - (obstacle.dimensions[0] * scaleX / 2);
-                const y = obstacle.position.y * scaleY - (obstacle.dimensions[1] * scaleY / 2);
-                const width = obstacle.dimensions[0] * scaleX;
-                const height = obstacle.dimensions[1] * scaleY;
+                const x = building.location.y * scaleY;
+                const y = building.location.x * scaleX;
+                const radius = 0.05 * scaleX; // Use a fixed radius of 0.10m
 
-                ctx.fillRect(x, y, width, height);
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
 
-                // Label the obstacle
+                // Label the building
                 ctx.fillStyle = 'black';
                 ctx.font = '16px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                const centerX = x + width / 2;
-                const centerY = y + height / 2;
-                ctx.fillText(obstacle.name, centerX, centerY);
+                ctx.fillText(building.name, x, y);
             });
 
             // Draw drones
-            environmentData.drones.forEach(drone => {
-                const x = drone.position.x * scaleX;
-                const y = drone.position.y * scaleY;
-
-                // Draw highlight for selected drone
-                if (drone.id === selectedDroneId) {
-                    ctx.beginPath();
-                    ctx.arc(x, y, 12, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'gold';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
+            Object.values(environmentData.drones).forEach(drone => {
+                const x = drone.telemetry.position.y * scaleY;
+                const y = drone.telemetry.position.x * scaleX;
 
                 // Set drone color based on state to match the legend
+                let droneColor;
                 switch (drone.state) {
-                    case 'IDLE': ctx.fillStyle = 'green'; break;
-                    case 'FLYING': ctx.fillStyle = 'blue'; break;
-                    case 'TAKING_OFF': ctx.fillStyle = 'purple'; break;
-                    case 'LANDING': ctx.fillStyle = 'orange'; break;
-                    case 'EMERGENCY': ctx.fillStyle = 'red'; break;
-                    default: ctx.fillStyle = 'black';
+                    case 'IDLE': droneColor = 'green'; break;
+                    case 'FLYING': droneColor = 'blue'; break;
+                    case 'TAKING_OFF': droneColor = 'purple'; break;
+                    case 'LANDING': droneColor = 'orange'; break;
+                    case 'EMERGENCY': droneColor = 'red'; break;
+                    default: droneColor = 'black';
                 }
 
-                // Draw the drone
-                ctx.beginPath();
-                ctx.arc(x, y, 8, 0, Math.PI * 2);
-                ctx.fill();
+                // Draw the drone icon with rotation based on heading
+                const isSelected = drone.drone_id === selectedDroneId;
+                drawDroneIcon(x, y, drone.telemetry.heading, droneColor, isSelected);
 
-                // Draw outline
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 1;
-                ctx.stroke();
+                // Display altitude and heading in right upper corner of drone
+                const altText = `${drone.telemetry.position.z.toFixed(1)}m`;
+                const headingText = `${drone.telemetry.heading.toFixed(0)}°`;
+                const displayText = `${altText} | ${headingText}`;
 
-                // Display only altitude with BIG BLACK TEXT
-                const altText = `${drone.position.z.toFixed(1)}m`;
-                ctx.font = 'bold 16px Arial';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'left';
+
+                // Position text at right upper corner of drone
+                const textX = x + iconSize / 2 + 2;
+                const textY = y - iconSize / 2 - 2;
+
+                // Add text stroke for better visibility without background
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.strokeText(displayText, textX, textY);
+
+                // Draw the text
                 ctx.fillStyle = 'black';
-
-                // Add white background to ensure text is visible on any background
-                const textWidth = ctx.measureText(altText).width;
-                ctx.fillStyle = 'white';
-                ctx.fillRect(x + 25, y - 20, textWidth + 6, 24);
-
-                // Draw the altitude text
-                ctx.fillStyle = 'black';
-                ctx.fillText(altText, x + 28, y - 3);
+                ctx.fillText(displayText, textX, textY);
             });
         }
 
@@ -624,16 +958,17 @@
 
             // Get click coordinates relative to canvas
             const rect = canvas.getBoundingClientRect();
-            const clickX = (event.clientX - rect.left) / scaleX;
-            const clickY = (event.clientY - rect.top) / scaleY;
+            const clickX = (event.clientX - rect.left) / scaleY; // Note: using scaleY for X coordinate
+            const clickY = (event.clientY - rect.top) / scaleX;  // Note: using scaleX for Y coordinate
 
             // Find a drone that was clicked
             let clickedDrone = null;
-            const clickRadius = 8 / Math.min(scaleX, scaleY); // Convert 8px to environment units
+            const clickRadius = (iconSize / 2) / Math.min(scaleX, scaleY); // Convert icon radius to environment units
 
-            for (const drone of environmentData.drones) {
-                const dx = drone.position.x - clickX;
-                const dy = drone.position.y - clickY;
+            for (const drone of Object.values(environmentData.drones)) {
+                // Match the coordinate system used in rendering: x = drone.y, y = drone.x
+                const dx = drone.telemetry.position.y - clickX;
+                const dy = drone.telemetry.position.x - clickY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance <= clickRadius) {
@@ -644,8 +979,7 @@
 
             if (clickedDrone) {
                 // If clicked a drone, select it and show details
-                selectedDroneId = clickedDrone.id;
-                fetchDroneDetails(clickedDrone.id);
+                selectDrone(clickedDrone.drone_id);
             } else {
                 // If clicked empty space, deselect
                 clearSelectedDrone();
@@ -654,61 +988,32 @@
             renderEnvironment();
         });
 
+        // Initialize drone icon
+        loadDroneIcon();
+
         // Initial data fetch
         fetchData();
 
         // Auto-refresh every 1 second
-        setInterval(fetchData, 1000);
+        setInterval(fetchData, 100);
 
         // Add these functions to handle the LLM Autopilot
-        let selectedDroneHasAutopilot = false;
-
-        function initializeAutopilot() {
-            if (!selectedDroneId) {
-                alert("Please select a drone first");
-                return;
-            }
-
-            fetch(`/autopilot/${selectedDroneId}/initialize`, {
-                method: 'POST'
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log("Autopilot initialized:", data);
-                    selectedDroneHasAutopilot = true;
-                    document.getElementById('sendCommandBtn').disabled = false;
-                    document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
-                    document.getElementById('initAutopilotBtn').disabled = true;
-                })
-                .catch(error => {
-                    console.error("Error initializing autopilot:", error);
-                    alert(`Error initializing autopilot: ${error.message}`);
-                });
-        }
-
         function sendNLCommand() {
-            if (!selectedDroneId || !selectedDroneHasAutopilot) {
-                alert("Please select a drone and initialize its autopilot first");
+            if (!selectedDroneId) {
+                alert("Lütfen önce bir drone seçin");
                 return;
             }
 
             const command = document.getElementById('nlCommand').value.trim();
             if (!command) {
-                alert("Please enter a command");
+                alert("Lütfen bir komut girin");
                 return;
             }
 
-            // Display loading indicator
-            const resultDiv = document.getElementById('commandResult');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '<div style="text-align: center;">Processing command...</div>';
+            // Display loading indicator in chat
+            displayLoadingMessage();
 
-            fetch(`/autopilot/${selectedDroneId}/command`, {
+            fetch(`/autopilot/${selectedDroneId}/command/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -722,47 +1027,201 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log("Command result:", data);
-                    resultDiv.innerHTML = `
-                    <div style="margin-bottom: 5px; font-weight: bold;">Result:</div>
-                    <div style="white-space: pre-wrap; font-family: monospace;">${data.result}</div>
-                `;
+                    // Fetch and display chat history
+                    fetchChatHistory();
+
+                    // Clear the command input
+                    document.getElementById('nlCommand').value = '';
 
                     // Refresh drone data
-                    fetchDroneDetails(selectedDroneId);
+                    fetchData();
                 })
                 .catch(error => {
                     console.error("Error executing command:", error);
-                    resultDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+                    displayErrorMessage(error.message);
                 });
         }
 
-        // Modify selectDrone function to reset autopilot state
-        const originalSelectDrone = selectDrone;
-        selectDrone = function (droneId) {
-            originalSelectDrone(droneId);
+        // Display loading message in chat
+        function displayLoadingMessage() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">Komut işleniyor...</div>';
+        }
 
-            // Reset autopilot state
-            selectedDroneHasAutopilot = false;
-            document.getElementById('sendCommandBtn').disabled = true;
-            document.getElementById('initAutopilotBtn').disabled = false;
-            document.getElementById('initAutopilotBtn').textContent = 'Initialize Autopilot';
-            document.getElementById('commandResult').style.display = 'none';
+        // Display error message in chat
+        function displayErrorMessage(errorMsg) {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `<div style="color: red; text-align: center;">Hata: ${errorMsg}</div>`;
+        }
 
-            // Check if the selected drone already has an autopilot
-            fetch(`/autopilot/list`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data[droneId]) {
-                        selectedDroneHasAutopilot = true;
-                        document.getElementById('sendCommandBtn').disabled = false;
-                        document.getElementById('initAutopilotBtn').textContent = 'Autopilot Initialized';
-                        document.getElementById('initAutopilotBtn').disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error("Error checking autopilot status:", error);
+        // Fetch and display chat history
+        async function fetchChatHistory() {
+            if (!selectedDroneId) return;
+
+            try {
+                const response = await fetch(`/autopilot/${selectedDroneId}/chat_history`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                const chatHistory = await response.json();
+                displayChatHistory(chatHistory);
+            } catch (error) {
+                console.error('Error fetching chat history:', error);
+                displayErrorMessage(`Failed to fetch chat history: ${error.message}`);
+            }
+        }
+
+        // Display chat history in the chat panel
+        function displayChatHistory(chatHistory) {
+            const chatMessages = document.getElementById('chatMessages');
+
+            if (!chatHistory || chatHistory.length === 0) {
+                chatMessages.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">Henüz konuşma geçmişi yok</div>';
+                return;
+            }
+
+            let html = '';
+            chatHistory.forEach(message => {
+                const messageClass = message.message_type.toLowerCase();
+                const messageTypeDisplay = message.message_type === 'USER' ? 'You' :
+                    message.message_type === 'AGENT' ? 'Drone' :
+                        'Tool';
+
+                html += `
+                    <div class="chat-message ${messageClass}">
+                        <div class="message-type">${messageTypeDisplay}</div>
+                        <div class="message-content">${escapeHtml(message.content)}</div>
+                    </div>
+                `;
+            });
+
+            chatMessages.innerHTML = html;
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Utility function to escape HTML characters
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Handle drone selection (called when a drone is clicked)
+        function selectDrone(droneId) {
+            console.log("Selecting drone:", droneId);
+            selectedDroneId = droneId;
+
+            // Get drone data directly from environment state
+            if (environmentData && environmentData.drones && environmentData.drones[droneId]) {
+                droneDetailData = environmentData.drones[droneId];
+                console.log("Using drone data from environment state:", droneDetailData);
+                updateDroneDetailsPanel();
+
+                // Show both panels
+                console.log("Showing details and chat panels");
+                document.getElementById('droneDetails').style.display = 'block';
+                document.getElementById('chatHistory').style.display = 'block';
+
+                // Load chat history for this drone
+                fetchChatHistory();
+            } else {
+                console.error("Drone not found in environment data:", droneId);
+                clearSelectedDrone();
+                return;
+            }
+        }
+
+        // Open drone creator form with specified drone type
+        function openDroneCreator(droneType) {
+            selectedDroneType = droneType;
+            const creatorDiv = document.getElementById('droneCreator');
+            const titleElement = document.getElementById('droneCreatorTitle');
+
+            // Update the title based on drone type
+            if (droneType === 'simulation') {
+                titleElement.textContent = 'Simülasyon Drone\'u Oluştur';
+            } else {
+                titleElement.textContent = 'CrazyFlie Drone\'u Oluştur';
+            }
+
+            creatorDiv.style.display = 'block';
+        }
+
+        // Close drone creator form
+        function closeDroneCreator() {
+            document.getElementById('droneCreator').style.display = 'none';
+            selectedDroneType = null;
+        }
+
+        // Create drone using the selected drone type
+        function createSelectedDrone() {
+            if (!selectedDroneType) {
+                alert('Drone tipi seçilmedi');
+                return;
+            }
+            createDrone(selectedDroneType);
+        }
+
+        // Create drone with name and location (unified function)
+        async function createDrone(droneType) {
+            try {
+                const name = document.getElementById('droneName').value.trim();
+                const x = parseFloat(document.getElementById('droneX').value);
+                const y = parseFloat(document.getElementById('droneY').value);
+                const z = parseFloat(document.getElementById('droneZ').value);
+
+                if (!name) {
+                    alert('Lütfen drone ismi girin');
+                    return;
+                }
+
+                if (isNaN(x) || isNaN(y) || isNaN(z)) {
+                    alert('Lütfen geçerli koordinatlar girin');
+                    return;
+                }
+
+                // Determine the endpoint based on drone type
+                const endpoint = droneType === 'simulation'
+                    ? "/environment/create-simulation-drone/"
+                    : "/environment/create-crazyflie-drone/";
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        location: {
+                            x: x,
+                            y: y,
+                            z: z
+                        }
+                    })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to create drone');
+                }
+
+                const droneId = await response.text();
+                console.log(`Created ${droneType} drone with ID: ${droneId}`);
+
+                // Select the newly created drone
+                selectedDroneId = droneId.replace(/"/g, ''); // Remove quotes from response
+                fetchData();
+
+                // Hide the creator form and refresh the data
+                closeDroneCreator();
+                fetchData();
+            } catch (error) {
+                console.error(`Error creating ${droneType} drone:`, error);
+                alert(`Drone oluştururken hata: ${error.message}`);
+            }
         }
     </script>
 </body>

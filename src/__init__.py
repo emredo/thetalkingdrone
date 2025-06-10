@@ -38,8 +38,14 @@ def create_app() -> FastAPI:
         endpoint = f"{request.method} {request.url.path}"
         start_time = time.time()
 
-        # Log the request
-        logger.info(f"REQUEST: {endpoint}")
+        # Skip logging for /environment/state endpoint to reduce noise
+        should_log = not (
+            request.method == "GET" and request.url.path == "/environment/state/"
+        )
+
+        # Log the request only if not filtered
+        if should_log:
+            logger.info(f"REQUEST: {endpoint}")
 
         # Process the request
         response = await call_next(request)
@@ -47,10 +53,11 @@ def create_app() -> FastAPI:
         # Calculate processing time
         process_time = time.time() - start_time
 
-        # Log response information
-        logger.info(
-            f"RESPONSE: {endpoint} - Status {response.status_code} - Took {process_time:.3f}s"
-        )
+        # Log response information only if not filtered
+        if should_log:
+            logger.info(
+                f"RESPONSE: {endpoint} - Status {response.status_code} - Took {process_time:.3f}s"
+            )
 
         return response
 
@@ -165,6 +172,7 @@ def serve(
         port=port,
         reload=reload,
         factory=True,
+        access_log=False,  # Disable uvicorn access logging to prevent /environment/state noise
     )
 
 

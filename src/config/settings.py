@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from src.models.physical_models import Location, Obstacle
+from src.models.physical_models import BuildingInformation, Location
 
 
 class Settings:
@@ -11,29 +11,27 @@ class Settings:
     debug: bool = False
 
     # Environment settings
-    boundaries: Tuple[float, float, float] = (1.5, 1.5, 1.5)
+    boundaries: Tuple[float, float, float] = (1.35, 1.35, 1.25)
     # Environment obstacles
-    environment_obstacles: List[Obstacle] = [
-        Obstacle(
-            location=Location(x=0.70, y=0.50, z=0.0),
-            dimensions=(0.10, 0.10, 0.20),
-            name="İTÜ Ayazağa",
+    buildings: List[BuildingInformation] = [
+        BuildingInformation(
+            location=Location(x=0.70, y=0.50, z=0.15),
+            name="Sarı Defter",
         ),
-        Obstacle(
-            location=Location(x=0.25, y=0.70, z=0.0),
-            dimensions=(0.10, 0.10, 0.20),
-            name="Taksim İlk Yardım",
+        BuildingInformation(
+            location=Location(x=1, y=0.05, z=0.15),
+            name="Beyaz Kağıt",
         ),
-        Obstacle(
-            location=Location(x=0.30, y=0.10, z=0.0),
-            dimensions=(0.10, 0.10, 0.20),
-            name="Gümüşsuyu",
+        BuildingInformation(
+            location=Location(x=0.20, y=1.25, z=0.15),
+            name="Siyah Defter",
         ),
     ]
 
     # Default drone model settings
-    default_drone_name: str = "Standard Drone"
-    default_drone_max_speed: float = 1.0
+    default_drone_max_speed: float = 0.25
+    default_drone_max_vertical_speed: float = 0.25
+    default_drone_max_yaw_rate: float = 9
     default_drone_max_altitude: float = 1.5
     default_drone_weight: float = 0.100
     default_drone_dimensions: tuple = (0.10, 0.10, 0.02)

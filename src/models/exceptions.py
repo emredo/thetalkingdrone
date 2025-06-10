@@ -34,12 +34,6 @@ class InvalidLocationException(EnvironmentException):
     pass
 
 
-class ObstacleCollisionException(EnvironmentException):
-    """Exception raised when a collision with an obstacle is detected."""
-
-    pass
-
-
 class OutOfBoundsException(EnvironmentException):
     """Exception raised when trying to move outside the environment boundaries."""
 

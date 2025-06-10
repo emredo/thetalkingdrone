@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
 class DroneState(str, Enum):
@@ -15,11 +15,21 @@ class DroneState(str, Enum):
     MAINTENANCE = "MAINTENANCE"
 
 
+class DroneType(str, Enum):
+    """Enum representing possible drone types."""
+
+    SIMULATION = "SIMULATION"
+    CRAZYFLIE = "CRAZYFLIE"
+
+
 class DroneModel(BaseModel):
     """Model containing static drone specifications."""
 
     name: str
+    type: DroneType = Field(description="Type of drone")
     max_speed: float = Field(description="Maximum speed in m/s")
+    max_yaw_rate: float = Field(description="Maximum yaw rate in degrees/s")
+    max_vertical_speed: float = Field(description="Maximum vertical speed in m/s")
     max_altitude: float = Field(description="Maximum altitude in meters")
     weight: float = Field(description="Weight in kg")
     dimensions: tuple[float, float, float] = Field(
@@ -39,14 +49,19 @@ class Location(BaseModel):
     z: float = Field(default=0.0, description="Z coordinate (altitude)")
 
 
-class Obstacle(BaseModel):
-    """Obstacle model representing buildings, etc."""
+class Telemetry(BaseModel):
+    """Model containing telemetry data."""
+
+    heading: float = Field(default=0.0, description="Heading in degrees")
+    position: Location = Field(description="Position in 3D space")
+    state: DroneState = Field(description="State of the drone")
+
+
+class BuildingInformation(BaseModel):
+    """Building information model representing buildings, etc."""
 
     location: Location
-    dimensions: Tuple[float, float, float] = Field(
-        description="Width, length, height of the obstacle"
-    )
-    name: Optional[str] = Field(default=None, description="Identifier for the obstacle")
+    name: Optional[str] = Field(default=None, description="Identifier for the building")
 
 
 class EnvironmentFeatures(BaseModel):
@@ -55,8 +70,8 @@ class EnvironmentFeatures(BaseModel):
     boundaries: Tuple[float, float, float] = Field(
         description="Maximum (x, y, z) coordinates defining the environment boundaries"
     )
-    obstacles: List[Obstacle] = Field(
-        default_factory=list, description="List of obstacles in the environment"
+    buildings: List[BuildingInformation] = Field(
+        default_factory=list, description="List of buildings in the environment"
     )
 
 
@@ -65,28 +80,6 @@ class DroneData(BaseModel):
 
     drone_id: str = Field(description="Unique identifier for the drone")
     model: DroneModel
-    location: Location = Field(default_factory=Location)
-    state: DroneState = Field(default=DroneState.IDLE)
     fuel_level: float = Field(description="Current fuel level")
     payload: float = Field(default=0.0, description="Current payload weight in kg")
-    speed: float = Field(default=0.0, description="Current speed in m/s")
-    heading: float = Field(default=0.0, description="Current heading in degrees")
-    telemetry: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional telemetry data"
-    )
-
-    @validator("fuel_level")
-    def validate_fuel_level(cls, v, values):
-        """Validate that fuel level is not negative and doesn't exceed capacity."""
-        if "model" not in values:
-            return v
-
-        if v < 0:
-            raise ValueError("Fuel level cannot be negative")
-
-        if v > values["model"].fuel_capacity:
-            raise ValueError(
-                f"Fuel level cannot exceed capacity of {values['model'].fuel_capacity}"
-            )
-
-        return v
+    telemetry: Telemetry = Field(description="Additional telemetry data")
