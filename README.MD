@@ -4,6 +4,8 @@ This tech will revolutionize the UAV industry.
 
 **🚁 Direct Python Execution**: This project runs directly on your system (no Docker) to ensure optimal communication with Crazyflie drones and direct hardware access.
 
+<b>WARNING:</b> Sample videos can be found at <a href="https://drive.google.com/drive/folders/1tvyYLorDzAKoLMXd4FmY9G8OFlNT8kFv?usp=sharing">this drive folder </a>
+
 ## Quick Start
 
 1. **Set up the environment:**
