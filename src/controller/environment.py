@@ -92,7 +92,6 @@ def create_default_simulation_drone(
         # Create default drone model based on settings
         from src.config.settings import Settings
 
-        print(request.name)
         model = DroneModel(
             name=request.name,
             max_speed=Settings.default_drone_max_speed,

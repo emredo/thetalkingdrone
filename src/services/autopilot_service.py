@@ -1,5 +1,6 @@
-from typing import Any, Dict, List
 import warnings
+from typing import Any, Dict, List
+
 from langchain.chat_models import init_chat_model
 from langchain.prompts import PromptTemplate
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -13,7 +14,6 @@ from src.models import (
 )
 from src.models.physical_models import BuildingInformation, Location
 from src.services.drone_base import DroneServiceBase
-
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -128,7 +128,6 @@ class AutoPilotService:
                 chat_history += f"--------\nAI Message: {message.content}\nAI Tool Calls: {message.tool_calls}\n"
             elif isinstance(message, ToolMessage):
                 chat_history += f"--------\nTool Response: {message.content}\n"
-        print(chat_history)
         return chat_history
 
     def _prepare_prompt(self, state) -> str:
@@ -239,7 +238,7 @@ class AutoPilotService:
             if (
                 msg.content == ""
                 or isinstance(msg, ToolMessage)
-                or (isinstance(msg, AIMessage) and msg.tool_calls is not None)
+                or msg.content.startswith("Sorry, need more steps")
             ):
                 continue
             if isinstance(msg, HumanMessage):

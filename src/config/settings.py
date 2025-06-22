@@ -16,15 +16,27 @@ class Settings:
     buildings: List[BuildingInformation] = [
         BuildingInformation(
             location=Location(x=0.70, y=0.50, z=0.15),
-            name="Sarı Defter",
+            name="Sarı Alan",
         ),
         BuildingInformation(
             location=Location(x=1, y=0.05, z=0.15),
-            name="Beyaz Kağıt",
+            name="Beyaz Alan",
         ),
         BuildingInformation(
             location=Location(x=0.20, y=1.25, z=0.15),
-            name="Siyah Defter",
+            name="Mavi Alan",
+        ),
+        BuildingInformation(
+            location=Location(x=0.85, y=0.85, z=0.15),
+            name="Kırmızı Alan",
+        ),
+        BuildingInformation(
+            location=Location(x=0.35, y=0.35, z=0.15),
+            name="Yeşil Alan",
+        ),
+        BuildingInformation(
+            location=Location(x=0.15, y=0.95, z=0.15),
+            name="Siyah Alan",
         ),
     ]
 

@@ -1059,7 +1059,7 @@
             if (!selectedDroneId) return;
 
             try {
-                const response = await fetch(`/autopilot/${selectedDroneId}/chat_history`);
+                const response = await fetch(`/autopilot/${selectedDroneId}/chat_history/`);
                 if (!response.ok) {
                     throw new Error(`HTTP error ${response.status}`);
                 }

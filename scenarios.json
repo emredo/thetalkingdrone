@@ -1,0 +1,63 @@
+{
+    "buildings": [
+        {
+            "name": "Sarı Alan",
+            "location": {
+                "x": 0.70,
+                "y": 0.50,
+                "z": 0.15
+            }
+        },
+        {
+            "name": "Beyaz Alan",
+            "location": {
+                "x": 1,
+                "y": 0.05,
+                "z": 0.15
+            }
+        },
+        {
+            "name": "Mavi Alan",
+            "location": {
+                "x": 0.20,
+                "y": 1.25,
+                "z": 0.15
+            }
+        },
+        {
+            "name": "Kırmızı Alan",
+            "location": {
+                "x": 0.20,
+                "y": 1.25,
+                "z": 0.15
+            }
+        },
+        {
+            "name": "Yeşil Alan",
+            "location": {
+                "x": 0.20,
+                "y": 1.25,
+                "z": 0.15
+            }
+        },
+        {
+            "name": "Siyah Alan",
+            "location": {
+                "x": 0.20,
+                "y": 1.25,
+                "z": 0.15
+            }
+        }
+    ],
+    "commands": [
+        "Kalk ve in",
+        "Telemetri bilgilerini ver",
+        "Kalkış yap ve sola 45 derece dön",
+        "Sarı Alan'a git",
+        "Kalk ve Beyaz Alan'a uç",
+        "Koordinat x=0.5, y=0.5, z=1.5 konumuna git ve mevcut durumumu rapor et",
+        "Kalk, Mavi Alan'a git, orada 90 derece sağa dön, sonra geri başlangıç noktasına dön",
+        "Tüm renkli alanları sırayla ziyaret et: önce Sarı Alan'a git, sonra Beyaz Alan'a, ardından Mavi Alan'a uç ve her birinde telemetri bilgilerini kontrol et",
+        "Tam otomatik keşif görevi: kalk, her bir renkli alanı ziyaret et (Sarı, Beyaz, Mavi, Kırmızı, Yeşil, Siyah), her alanda 360 derece dönüş yap, telemetri verilerini kaydet ve güvenli bir şekilde başlangıç noktasına geri dön ve in"
+    ]
+}
