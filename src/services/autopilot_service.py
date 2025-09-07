@@ -14,6 +14,7 @@ from src.models import (
 )
 from src.models.physical_models import BuildingInformation, Location
 from src.services.drone_base import DroneServiceBase
+from src.utils.logger import logger
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -106,7 +107,7 @@ class AutoPilotService:
             self.agent = create_react_agent(
                 model=init_chat_model(
                     model=Settings.langchain_model,
-                    max_tokens=1000,
+                    max_tokens=128000,
                     max_retries=3,
                     temperature=0.2,
                     google_api_key=GOOGLE_API_KEY,
@@ -258,6 +259,7 @@ class AutoPilotService:
             raise AgentNotInitializedException("Agent not initialized. Call first.")
 
         try:
+            logger.info(f"Executing command: {command}")
             # Create a state with the command as a HumanMessage
             self.memory.append(HumanMessage(content=command))
             # Execute the agent with the input state
@@ -272,4 +274,5 @@ class AutoPilotService:
                     response = update_state["tools"]
                 self.memory.extend(response.get("messages", []))
         except Exception as e:
+            logger.error(f"Failed to execute command: {str(e)}")
             raise InvalidCommandException(f"Failed to execute command: {str(e)}")

@@ -2,6 +2,7 @@ import math
 import threading
 import time
 
+from src.constant.constants import CRAZYFLIE_TAKEOFF_ALTITUDE
 from src.models.exceptions import (
     DroneException,
     DroneNotOperationalException,
@@ -63,7 +64,7 @@ class SimulationDroneService(DroneServiceBase):
 
     def take_off(self) -> None:
         """Command drone to take off to specified altitude."""
-        target_altitude = 1
+        target_altitude = CRAZYFLIE_TAKEOFF_ALTITUDE
 
         # Check if drone can take off
         if self.drone.telemetry.state not in [DroneState.IDLE]:
