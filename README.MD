@@ -132,3 +132,5 @@ The default run already includes maximum debugging, but you can explicitly set:
 ```bash
 python run.py  # Already runs with --debug and --log-level debug by default
 ```
+
+NOTE: Dont get to excited if you find api keys in the repository, all of them are deleted.
